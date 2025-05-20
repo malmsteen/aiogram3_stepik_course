@@ -1,4 +1,4 @@
-# Telegram Echo Bot with PostgreSQL, Redis, and Admin Panel
+# Telegram Echo Bot with PostgreSQL, Redis, and Admin Tools
 
 This project is a **Telegram Echo Bot** powered by `aiogram`, designed to demonstrate practical integration with a **relational database (PostgreSQL)** and **Redis**. The bot includes **user role management**, **language selection**, and **admin tools** for moderation and user analytics.
 
@@ -24,6 +24,7 @@ This project is a **Telegram Echo Bot** powered by `aiogram`, designed to demons
 - **aiogram** – Fast and flexible Telegram bot framework for Python.
 - **PostgreSQL** – Relational DB to persist users and their activity.
 - **Redis** – FSM storage for aiogram.
+- **pgAdmin** – Visual database management for PostgreSQL.
 - **Docker** — Used to run infrastructure services like PostgreSQL, Redis, and pgAdmin.
 
 ## Running the Bot
@@ -98,7 +99,7 @@ python3 main.py
 
 ## Notes
 
-- User status is updated to is_alive=false if the bot is blocked.
+- User status is updated to `is_alive=false` if the bot is blocked.
 - All roles and bans are DB-driven; no hardcoded access.
 
 ## Feedback
@@ -108,3 +109,10 @@ Have ideas or issues? Open a GitHub Issue or contact the maintainer.
 ## License
 
 This project is licensed under the **MIT License**.
+
+## Additional Resources
+
+If you want to learn more about building Telegram bots with `aiogram`, check out the related Stepik course:
+
+[Stepik Course: "Телеграм-боты на Python и AIOgram. Введение в профессию"](https://stepik.org/course/120924/)  
+*(Russian language, free access)*
