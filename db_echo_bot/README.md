@@ -82,17 +82,17 @@ python3 main.py
 - Logs activity in statistics.
 - Displays localized `/help` message and `Menu`.
 
-### Command **/help**:
+### Command `/help`:
 
 - Shows user-friendly command summary (localized).
 - Logs activity to statistics.
 
-### Command **/lang**:
+### Command `/lang`:
 
 - Lets user choose interface language (EN/RU).
 - Updates DB and button labels accordingly.
 
-### Commands **/ban** and **/unban** (admin only):
+### Commands `/ban` and `/unban` (admin only):
 
 - Bans/unbans by @username or user_id.
 - Handles input validation.
