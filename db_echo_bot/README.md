@@ -74,7 +74,7 @@ python3 main.py
 
 ## Bot Behavior
 
-### Command **/start**:
+### Command `/start`:
 
 - Adds user to users table if not existing.
 - Records initial language.

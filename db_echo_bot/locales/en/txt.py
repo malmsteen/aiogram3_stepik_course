@@ -1,6 +1,7 @@
 EN: dict[str, str] = {
-    "/start": "Hello!\n\nI am the echo bot to demonstrate the work of a relational database <b>PotgreSQL</b> in conjunction with <code>aiogram</code>!\n\n"
-    "If you want, you can send me something or send a command /help",
+    "/start": "Hello!\n\nI am the echo bot to demonstrate the work of a relational "
+              "database <b>PotgreSQL</b> in conjunction with <code>aiogram</code>!\n\n"
+              "If you want, you can send me something or send a command /help",
     "/help": "I am a bot that was created to demonstrate the collaboration of a relational "
              "database <b>PostgreSQL</b> and the library <code>aiogram</code>. I can save the "
              "selected interface language, as well as send you back your messages!\n\n"
@@ -44,7 +45,8 @@ EN: dict[str, str] = {
     "no_user": "❗ There is no such user in the database!",
     "empty_unban_answer": "❗ Please specify the user's ID or @username.",
     "incorrect_unban_arg": "⚠️ <b>Incorrect format.</b>\n\nUse /unban <code>ID</code> "
-                         "or /unban <code>@username</code>",
+                           "or /unban <code>@username</code>",
     "not_banned": "❗ The user was not banned anyway!",
     "succesfully_unbanned": "⚠️ The user has been successfully unbanned!",
+    "statistics": "📊 <b>Statistics on user actions:</b>\n\n{}",
 }

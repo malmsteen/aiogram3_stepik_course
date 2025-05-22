@@ -21,14 +21,16 @@ if sys.platform.startswith("win") or os.name == "nt":
 
 
 async def main():
-    connection: AsyncConnection = await get_pg_connection(
-        db_name=config.db.name,
-        host=config.db.host,
-        port=config.db.port,
-        user=config.db.user,
-        password=config.db.password,
-    )
+    connection: AsyncConnection | None = None
+
     try:
+        connection = await get_pg_connection(
+            db_name=config.db.name,
+            host=config.db.host,
+            port=config.db.port,
+            user=config.db.user,
+            password=config.db.password,
+        )
         async with connection:
             async with connection.transaction():
                 async with connection.cursor() as cursor:
@@ -39,8 +41,8 @@ async def main():
                                 user_id BIGINT NOT NULL UNIQUE,
                                 username VARCHAR(50),
                                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                                language VARCHAR(10),
-                                role VARCHAR(30),
+                                language VARCHAR(10) NOT NULL,
+                                role VARCHAR(30) NOT NULL,
                                 is_alive BOOLEAN NOT NULL,
                                 banned BOOLEAN NOT NULL
                             ); 
@@ -60,11 +62,14 @@ async def main():
                         """
                     )
                 logger.info("Tables `users` and `activity` were successfully created")
-    except Error as e:
-        logger.exception("Transaction rolled back due to error: %s", e)
+    except Error as db_error:
+        logger.exception("Database-specific error: %s", db_error)
+    except Exception as e:
+        logger.exception("Unhandled error: %s", e)
     finally:
-        await connection.close()
-        logger.info("Connection to Postgres closed")
+        if connection:
+            await connection.close()
+            logger.info("Connection to Postgres closed")
 
 
 asyncio.run(main())
