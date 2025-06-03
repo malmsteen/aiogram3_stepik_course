@@ -1,6 +1,6 @@
 EN: dict[str, str] = {
     "/start": "Hello!\n\nI am the echo bot to demonstrate the work of a relational "
-              "database <b>PotgreSQL</b> in conjunction with <code>aiogram</code>!\n\n"
+              "database <b>PostgreSQL</b> in conjunction with <code>aiogram</code>!\n\n"
               "If you want, you can send me something or send a command /help",
     "/help": "I am a bot that was created to demonstrate the collaboration of a relational "
              "database <b>PostgreSQL</b> and the library <code>aiogram</code>. I can save the "
