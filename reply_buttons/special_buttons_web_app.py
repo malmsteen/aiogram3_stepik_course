@@ -1,3 +1,5 @@
+import os
+
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
@@ -9,11 +11,7 @@ from aiogram.types import (
 from aiogram.types.web_app_info import WebAppInfo
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
-# Вместо BOT TOKEN HERE нужно вставить токен вашего бота,
-# полученный у @BotFather
-BOT_TOKEN = 'BOT TOKEN HERE'
-
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
 
 # Инициализируем билдер
