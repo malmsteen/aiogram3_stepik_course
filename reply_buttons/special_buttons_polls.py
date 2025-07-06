@@ -7,7 +7,6 @@ from aiogram.types import (
     KeyboardButton,
     KeyboardButtonPollType,
     Message,
-    Poll,
     PollAnswer,
     ReplyKeyboardMarkup,
 )

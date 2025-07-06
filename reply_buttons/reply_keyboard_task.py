@@ -2,7 +2,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.filters import CommandStart
-from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton, Message
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 print(__name__)
@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Вместо BOT TOKEN HERE нужно вставить токен вашего бота,
 # полученный у @BotFather
-# BOT_TOKEN = 'BOT TOKEN HERE'
-BOT_TOKEN = '5424991242:AAF3u0ik4Lizb99WJqBe0gc5ntdsFwa3s8I'
+BOT_TOKEN = 'BOT TOKEN HERE'
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
