@@ -4,7 +4,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from config_data.config import Config, load_config
+from config.config import Config, load_config
 from handlers.other import other_router
 from handlers.user import user_router
 
