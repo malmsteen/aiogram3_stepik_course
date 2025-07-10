@@ -1,18 +1,19 @@
 import copy
+import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
 from aiogram.filters.callback_data import CallbackData
-from aiogram.types import (CallbackQuery, InlineKeyboardButton,
-                           InlineKeyboardMarkup, Message)
-
-# Вместо BOT TOKEN HERE нужно вставить токен вашего бота,
-# полученный у @BotFather
-BOT_TOKEN = 'BOT TOKEN HERE'
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 # Создаем объекты бота и диспетчера
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
 
 # Инициализируем константу размера игрового поля
@@ -20,18 +21,18 @@ FIELD_SIZE = 8
 
 # Создаем словарь соответствий
 LEXICON = {
-    '/start': 'Вот твое поле. Можешь делать ход',
-    0: ' ',
-    1: '🌊',
-    2: '💥',
-    'miss': 'Мимо!',
-    'hit': 'Попал!',
-    'used': 'Вы уже стреляли сюда!',
-    'next_move': 'Делайте ваш следующий ход'
+    "/start": "Вот твоё поле. Можешь делать ход",
+    0: " ",
+    1: "🌊",
+    2: "💥",
+    "miss": "Мимо!",
+    "hit": "Попал!",
+    "used": "Вы уже стреляли сюда!",
+    "next_move": "Делайте ваш следующий ход",
 }
 
 # Хардкодим расположение кораблей на игровом поле
-ships: list[list[int]] = [
+ships = [
     [1, 0, 1, 1, 1, 0, 0, 0],
     [1, 0, 0, 0, 0, 0, 1, 0],
     [1, 0, 0, 0, 1, 0, 0, 0],
@@ -39,14 +40,14 @@ ships: list[list[int]] = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [1, 0, 1, 1, 0, 0, 0, 1],
     [0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 1, 1, 0, 0, 0, 0]
+    [0, 0, 1, 1, 0, 0, 0, 0],
 ]
 
 # Инициализируем "базу данных" пользователей
 users: dict[int, dict[str, list]] = {}
 
 
-# Создаем свой класс фабрики коллбэков, указывая префикс
+# Создаём свой класс фабрики коллбэков, указывая префикс
 # и структуру callback_data
 class FieldCallbackFactory(CallbackData, prefix="user_field"):
     x: int
@@ -55,10 +56,9 @@ class FieldCallbackFactory(CallbackData, prefix="user_field"):
 
 # Функция, которая пересоздает новое поле для каждого игрока
 def reset_field(user_id: int) -> None:
-    users[user_id]['ships'] = copy.deepcopy(ships)
-    users[user_id]['field'] = [
-        [0 for _ in range(FIELD_SIZE)]
-        for _ in range(FIELD_SIZE)
+    users[user_id]["ships"] = copy.deepcopy(ships)
+    users[user_id]["field"] = [
+        [0 for _ in range(FIELD_SIZE)] for _ in range(FIELD_SIZE)
     ]
 
 
@@ -70,9 +70,11 @@ def get_field_keyboard(user_id: int) -> InlineKeyboardMarkup:
     for i in range(FIELD_SIZE):
         array_buttons.append([])
         for j in range(FIELD_SIZE):
-            array_buttons[i].append(InlineKeyboardButton(
-                text=LEXICON[users[user_id]['field'][i][j]],
-                callback_data=FieldCallbackFactory(x=i, y=j).pack())
+            array_buttons[i].append(
+                InlineKeyboardButton(
+                    text=LEXICON[users[user_id]["field"][i][j]],
+                    callback_data=FieldCallbackFactory(x=i, y=j).pack(),
+                )
             )
 
     return InlineKeyboardMarkup(inline_keyboard=array_buttons)
@@ -87,7 +89,7 @@ async def process_start_command(message: Message):
         users[message.from_user.id] = {}
     reset_field(message.from_user.id)
     await message.answer(
-        text=LEXICON['/start'],
+        text=LEXICON["/start"],
         reply_markup=get_field_keyboard(message.from_user.id)
     )
 
@@ -95,30 +97,36 @@ async def process_start_command(message: Message):
 # Этот хэндлер будет срабатывать на нажатие любой инлайн-кнопки на поле,
 # запускать логику проверки результата нажатия и формирования ответа
 @dp.callback_query(FieldCallbackFactory.filter())
-async def process_category_press(callback: CallbackQuery,
-                                 callback_data: FieldCallbackFactory):
-    field = users[callback.from_user.id]['field']
-    ships = users[callback.from_user.id]['ships']
-    if field[callback_data.x][callback_data.y] == 0 and \
-    ships[callback_data.x][callback_data.y] == 0:
-        answer = LEXICON['miss']
+async def process_category_press(
+    callback: CallbackQuery, callback_data: FieldCallbackFactory
+):
+    field = users[callback.from_user.id]["field"]
+    ships = users[callback.from_user.id]["ships"]
+    if (
+        field[callback_data.x][callback_data.y] == 0
+        and ships[callback_data.x][callback_data.y] == 0
+    ):
+        answer = LEXICON["miss"]
         field[callback_data.x][callback_data.y] = 1
-    elif field[callback_data.x][callback_data.y] == 0 and \
-    ships[callback_data.x][callback_data.y] == 1:
-        answer = LEXICON['hit']
+    elif (
+        field[callback_data.x][callback_data.y] == 0
+        and ships[callback_data.x][callback_data.y] == 1
+    ):
+        answer = LEXICON["hit"]
         field[callback_data.x][callback_data.y] = 2
     else:
-        answer = LEXICON['used']
+        answer = LEXICON["used"]
 
     try:
         await callback.message.edit_text(
-            text=LEXICON['next_move'],
-            reply_markup=get_field_keyboard(callback.from_user.id))
+            text=LEXICON["next_move"],
+            reply_markup=get_field_keyboard(callback.from_user.id),
+        )
     except TelegramBadRequest:
         pass
 
     await callback.answer(answer)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dp.run_polling(bot)
