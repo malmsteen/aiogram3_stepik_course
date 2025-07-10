@@ -1,8 +1,3 @@
-# Создаем шаблон заполнения словаря с пользователями
-user_dict_template = {
-    'page': 1,
-    'bookmarks': set()
-}
-
-# Инициализируем "базу данных"
-users_db = {}
+# Функция для инициализации "базы данных"
+def init_db():
+    return {"user_template": {"page": 1, "bookmarks": set()}, "users": {}}
