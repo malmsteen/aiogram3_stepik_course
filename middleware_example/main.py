@@ -2,8 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.state import StatesGroup
-from config_data.config import Config, load_config
+from config.config import Config, load_config
 from handlers.other import other_router
 from handlers.user import user_router
 from middlewares.inner import (
@@ -18,25 +17,22 @@ from middlewares.outer import (
     first_outer_middleware,
 )
 
-# Настраиваем базовую конфигурацию логирования
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] #%(levelname)-8s %(filename)s:'
-           '%(lineno)d - %(name)s - %(message)s'
-)
-
 # Инициализируем логгер модуля
 logger = logging.getLogger(__name__)
 
 
 # Функция конфигурирования и запуска бота
 async def main() -> None:
-
     # Загружаем конфиг в переменную config
     config: Config = load_config()
 
+    # Задаём базовую конфигурацию логирования
+    logging.basicConfig(
+        level=logging.getLevelName(level=config.log.level),
+        format=config.log.format,
+    )
     # Инициализируем бот и диспетчер
-    bot = Bot(token=config.tg_bot.token)
+    bot = Bot(token=config.bot.token)
     dp = Dispatcher()
 
     # Регистриуем роутеры в диспетчере
@@ -44,12 +40,12 @@ async def main() -> None:
     dp.include_router(other_router)
 
     # Здесь будем регистрировать миддлвари
-    dp.update.outer_middleware(first_outer_middleware)
+    dp.update.outer_middleware(FirstOuterMiddleware())
     user_router.callback_query.outer_middleware(SecondOuterMiddleware())
-    # other_router.message.outer_middleware(ThirdOuterMiddleware())
-    # user_router.message.middleware(FirstInnerMiddleware())
-    # user_router.message.middleware(SecondInnerMiddleware())
-    # other_router.message.middleware(ThirdInnerMiddleware())
+    other_router.message.outer_middleware(ThirdOuterMiddleware())
+    user_router.message.middleware(FirstInnerMiddleware())
+    user_router.message.middleware(SecondInnerMiddleware())
+    other_router.message.middleware(ThirdInnerMiddleware())
 
     # Запускаем polling
     await dp.start_polling(bot)
