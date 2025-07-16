@@ -41,12 +41,12 @@ EN: dict[str, str] = {
     "incorrect_ban_arg": "⚠️ <b>Incorrect format.</b>\n\nUse /ban <code>ID</code> "
                          "or /ban <code>@username</code>",
     "already_banned": "❗ The user is already banned!",
-    "succesfully_banned": "⚠️ The user has been successfully banned!",
+    "successfully_banned": "⚠️ The user has been successfully banned!",
     "no_user": "❗ There is no such user in the database!",
     "empty_unban_answer": "❗ Please specify the user's ID or @username.",
     "incorrect_unban_arg": "⚠️ <b>Incorrect format.</b>\n\nUse /unban <code>ID</code> "
                            "or /unban <code>@username</code>",
     "not_banned": "❗ The user was not banned anyway!",
-    "succesfully_unbanned": "⚠️ The user has been successfully unbanned!",
+    "successfully_unbanned": "⚠️ The user has been successfully unbanned!",
     "statistics": "📊 <b>Statistics on user actions:</b>\n\n{}",
 }

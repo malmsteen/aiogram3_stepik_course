@@ -44,9 +44,9 @@ async def process_admin_statistics_command(message: Message, conn: AsyncConnecti
 # Этот хэндлер будет срабатывать на команду /ban для пользователя с ролью `UserRole.ADMIN`
 @admin_router.message(Command("ban"))
 async def process_ban_command(
-    message: Message, 
-    command: CommandObject, 
-    conn: AsyncConnection, 
+    message: Message,
+    command: CommandObject,
+    conn: AsyncConnection,
     i18n: dict[str, str]
 ) -> None:
     args = command.args
@@ -54,9 +54,9 @@ async def process_ban_command(
     if not args:
         await message.reply(i18n.get('empty_ban_answer'))
         return
-    
+
     arg_user = args.split()[0].strip()
-    
+
     if arg_user.isdigit():
         banned_status = await get_user_banned_status_by_id(conn, user_id=int(arg_user))
     elif arg_user.startswith('@'):
@@ -64,7 +64,7 @@ async def process_ban_command(
     else:
         await message.reply(text=i18n.get('incorrect_ban_arg'))
         return
-    
+
     if banned_status is None:
         await message.reply(i18n.get('no_user'))
     elif banned_status:
@@ -74,15 +74,15 @@ async def process_ban_command(
             await change_user_banned_status_by_id(conn, user_id=int(arg_user), banned=True)
         else:
             await change_user_banned_status_by_username(conn, username=arg_user[1:], banned=True)
-        await message.reply(text=i18n.get('succesfully_banned'))
+        await message.reply(text=i18n.get('successfully_banned'))
 
 
 # Этот хэндлер будет срабатывать на команду /unban для пользователя с ролью `UserRole.ADMIN`
 @admin_router.message(Command('unban'))
 async def process_unban_command(
-    message: Message, 
-    command: CommandObject, 
-    conn: AsyncConnection, 
+    message: Message,
+    command: CommandObject,
+    conn: AsyncConnection,
     i18n: dict[str, str]
 ) -> None:
     args = command.args
@@ -90,9 +90,9 @@ async def process_unban_command(
     if not args:
         await message.reply(i18n.get('empty_unban_answer'))
         return
-    
+
     arg_user = args.split()[0].strip()
-    
+
     if arg_user.isdigit():
         banned_status = await get_user_banned_status_by_id(conn, user_id=int(arg_user))
     elif arg_user.startswith('@'):
@@ -100,7 +100,7 @@ async def process_unban_command(
     else:
         await message.reply(text=i18n.get('incorrect_unban_arg'))
         return
-    
+
     if banned_status is None:
         await message.reply(i18n.get('no_user'))
     elif banned_status:
@@ -108,6 +108,6 @@ async def process_unban_command(
             await change_user_banned_status_by_id(conn, user_id=int(arg_user), banned=False)
         else:
             await change_user_banned_status_by_username(conn, username=arg_user[1:], banned=False)
-        await message.reply(text=i18n.get('succesfully_unbanned'))
+        await message.reply(text=i18n.get('successfully_unbanned'))
     else:
         await message.reply(i18n.get('not_banned'))
