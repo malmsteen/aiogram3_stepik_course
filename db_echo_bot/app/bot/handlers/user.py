@@ -6,15 +6,21 @@ from aiogram.enums import BotCommandScopeType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import KICKED, ChatMemberUpdatedFilter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import BotCommandScopeChat, ChatMemberUpdated, Message
+from aiogram.types import BotCommandScopeChat, ChatMemberUpdated, Message, CallbackQuery
 from app.bot.enums.roles import UserRole
+from app.bot.filters.filters import IsDigitCallbackData
 from app.bot.keyboards.menu_button import get_main_menu_commands
+from app.bot.keyboards.keyboards import create_sections_keyboard
 from app.bot.states.states import LangSG
+from app.infrastructure.latex.latex import make_pdf
+
+
 from app.infrastructure.database.db import (
     add_user,
     change_user_alive_status,
     get_user,
     get_user_lang,
+    get_problem_texts
 )
 from psycopg.connection_async import AsyncConnection
 
@@ -89,3 +95,30 @@ async def process_help_command(message: Message, i18n: dict[str, str]):
 async def process_user_blocked_bot(event: ChatMemberUpdated, conn: AsyncConnection):
     logger.info("User %d has blocked the bot", event.from_user.id)
     await change_user_alive_status(conn, user_id=event.from_user.id, is_alive=False)
+
+# Этот хэндлер срабатывает на команду /sections
+@user_router.message(Command(commands="sections"))
+async def process_sections_command(message: Message):
+    keyboard = create_sections_keyboard()
+    await message.answer(
+        text='Выбирете тему из списка',
+        reply_markup=keyboard,
+    )
+
+# срабатывает на нажатие кнопки с темой
+@user_router.callback_query(IsDigitCallbackData())
+async def process_section_press(callback: CallbackQuery, conn: AsyncConnection,):
+    num = callback.data
+    if int(num) >= 5:
+        num = str(int(num)+1)
+    problems = await get_problem_texts(conn, num)
+    # problems = [p[0] for p in problems]
+    # logger.info(f'{type(*problems[0])}, len {len(problems)}' )
+    # text = f"\n{'='*10}\n".join(problems)
+    pdf_doc = await make_pdf(problems)
+    # await message.answer_document(pdf_doc)
+    await callback.message.answer_document(
+        document=pdf_doc
+        # text=num,
+        # reply_markup=callback.message.reply_markup
+    )

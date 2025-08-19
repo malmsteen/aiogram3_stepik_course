@@ -75,7 +75,30 @@ services:
         max-size: "10m"
         max-file: "5"
         compress: "true"
-
+  texlive:
+    image: texlive/texlive:latest-full
+    container_name: texlive
+    volumes:
+      - ./:/workspace
+      - ./fonts/Pecita:/usr/local/share/fonts/Pecita
+      - ./fonts/STIX_Two_Text:/usr/local/share/fonts/STIX_Two_Text
+      - ./fonts/tex-gyre-pagella:/usr/local/share/fonts/tex-gyre-pagella
+    working_dir: /workspace
+    command: >
+      bash -c "
+        fc-cache -f -v &&
+        tlmgr update --self && \
+        tlmgr install babel-russian cm-unicode &&
+        tlmgr update --self && \
+        tlmgr install \
+        babel-russian \
+        collection-langcyrillic \
+        cm-super \
+        cyrillic \
+        cyrillic-bin \
+        lh;
+        sleep infinity   
+      "
 networks:
   app_network:
     name: app_network

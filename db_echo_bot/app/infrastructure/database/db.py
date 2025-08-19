@@ -284,3 +284,30 @@ async def get_statistics(conn: AsyncConnection) -> tuple[Any, ...] | None:
         rows = await data.fetchall()
     logger.info("Users activity got from table=`activity`")
     return [*rows] if rows else None
+
+
+async def get_problem_texts(
+        conn: AsyncConnection,
+        num: int
+) -> list:
+    async with conn.cursor() as cursor:
+        data = await cursor.execute(
+            query="""
+                SELECT text, source_id, position
+                FROM problems
+                WHERE position=%s
+                LIMIT 10;
+            """,
+            params=(num,)
+        )
+        rows = await data.fetchall()
+    logger.info(f"Got problems by position {num}")
+    out = []
+    for r in rows:
+        out.append({"text":r[0], "source_id":r[1], "position":r[2]})
+
+    return out
+
+
+
+

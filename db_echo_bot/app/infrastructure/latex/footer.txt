@@ -1,0 +1,25 @@
+
+
+\end{multicols}
+
+	% close solution file
+	\Closesolutionfile{mysolutions}
+
+	% renew the solution environment so that it hyperlinks back to
+	% the question
+	\renewenvironment{mySoln}[1]{%
+		% add some glue
+		\vskip .5cm plus 2cm minus 0.1cm%
+		{\bfseries \hypersetup{linkcolor=mygreen} \hyperlink{question:#1}{#1.}}%
+	}%
+	{%
+	}%
+	%\newpage
+	%\section*{Ответы}
+	\setlength{\parindent}{0.0mm}
+	% input the file if it exists
+	%\begin{multicols}{2}
+	\IfFileExists{mysolutions.tex}{\input{mysolutions.tex}}{}
+	%\end{multicols}
+
+\end{document}

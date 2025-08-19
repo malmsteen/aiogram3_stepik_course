@@ -39,3 +39,8 @@ class UserRoleFilter(BaseFilter):
             return False
         
         return role in self.roles
+    
+
+class IsDigitCallbackData(BaseFilter):
+    async def __call__(self, callback: CallbackQuery) -> bool:
+        return callback.data.isdigit()
