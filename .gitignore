@@ -9,3 +9,8 @@ __pycache__/
 .redis_data/
 .postgres_data/
 .pgadmin_data/
+*.aux
+*.log
+*.out
+*.pdf
+*.tex
