@@ -101,7 +101,7 @@ async def process_user_blocked_bot(event: ChatMemberUpdated, conn: AsyncConnecti
 async def process_sections_command(message: Message):
     keyboard = create_sections_keyboard()
     await message.answer(
-        text='Выбирете тему из списка',
+        text='Выбирете тему из списка, и документ отправится на печать',
         reply_markup=keyboard,
     )
 
@@ -111,12 +111,16 @@ async def process_section_press(callback: CallbackQuery, conn: AsyncConnection,)
     num = callback.data
     if int(num) >= 5:
         num = str(int(num)+1)
-    problems = await get_problem_texts(conn, num)
-    # problems = [p[0] for p in problems]
-    # logger.info(f'{type(*problems[0])}, len {len(problems)}' )
-    # text = f"\n{'='*10}\n".join(problems)
+    problems = await get_problem_texts(conn, num) 
+    await callback.message.edit_text(
+        text="⚙️✨ Компиляция началась...",
+        reply_markup=create_sections_keyboard())  
     pdf_doc = await make_pdf(problems)
     # await message.answer_document(pdf_doc)
+    await callback.message.edit_text(
+        text="✅ Готово! Можете выбрать еще",
+        reply_markup=create_sections_keyboard(),
+        show_alert=False)
     await callback.message.answer_document(
         document=pdf_doc
         # text=num,

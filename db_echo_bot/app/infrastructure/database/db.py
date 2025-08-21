@@ -291,17 +291,18 @@ async def get_problem_texts(
         num: int
 ) -> list:
     async with conn.cursor() as cursor:
+        limit = 10
         data = await cursor.execute(
-            query="""
+            query=f"""
                 SELECT text, source_id, position
                 FROM problems
                 WHERE position=%s
-                LIMIT 10;
+                LIMIT {limit};              
             """,
             params=(num,)
         )
         rows = await data.fetchall()
-    logger.info(f"Got problems by position {num}")
+    logger.info(f"Got {limit} problems by position {num}")
     out = []
     for r in rows:
         out.append({"text":r[0], "source_id":r[1], "position":r[2]})

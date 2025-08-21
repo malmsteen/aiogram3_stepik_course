@@ -79,7 +79,8 @@ services:
     image: texlive/texlive:latest-full
     container_name: texlive
     volumes:
-      - ./:/workspace
+      - ./pdf:/workspace
+      - ./app/infrastructure/latex/images:/workspace/images
       - ./fonts/Pecita:/usr/local/share/fonts/Pecita
       - ./fonts/STIX_Two_Text:/usr/local/share/fonts/STIX_Two_Text
       - ./fonts/tex-gyre-pagella:/usr/local/share/fonts/tex-gyre-pagella

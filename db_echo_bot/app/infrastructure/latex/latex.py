@@ -16,7 +16,8 @@ def docker_tex_compile(
     cmd = [
         'docker', 'exec', container,
         compiler, '-interaction=batchmode',        
-        tex_file
+        tex_file,
+       '&&', 'rm', '-f', '*.aux', '*.log', '*.out'        
     ]
     
     # Запуск
@@ -79,9 +80,9 @@ async def make_pdf(probs):
         
         png = f"app/infrastructure/latex/images/{prob['source_id']}.png"
         fullimgpath = os.path.join(curdir, png)
-        # print(fullimgpath)
+        print(fullimgpath, os.path.exists(fullimgpath))
         if os.path.exists(fullimgpath):
-            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{{png}}}' + '\end{center}'
+            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\end{center}'
         else:
             fig = ""
 
@@ -91,7 +92,8 @@ async def make_pdf(probs):
 
     tex_content += footer
     texfile = f'{sections[pos]}.tex'
-    with open(texfile, 'w', encoding='utf-8') as fw:
+    pdfpath = f'pdf/{texfile}'
+    with open(pdfpath, 'w', encoding='utf-8') as fw:
         fw.write(tex_content)
 
     # Пример использования
@@ -101,6 +103,6 @@ async def make_pdf(probs):
         compiler='lualatex'
     )
 
-    pdf_doc  = FSInputFile(texfile.replace('tex','pdf'), filename=f'{title}.pdf')
+    pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=f'{title}.pdf')
     return pdf_doc
     

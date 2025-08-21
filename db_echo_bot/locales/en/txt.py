@@ -8,7 +8,8 @@ EN: dict[str, str] = {
              "Available Commands:\n\n"
              "/start - restarting the bot\n"
              "/lang - set the interface language\n"
-             "/help - view this help\n",
+             "/help - view this help\n"
+             "/sections - view sections set",
     "/help_admin": "I am a bot that was created to demonstrate the collaboration of a relational "
                    "database <b>PostgreSQL</b> and the library <code>aiogram</code>. I can save the "
                    "selected interface language, as well as send you back your messages!\n\n"
