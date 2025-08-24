@@ -3,7 +3,20 @@ import os
 import regex as re
 from app.infrastructure.latex.util import footer, header
 from aiogram.types.input_file import FSInputFile
+import requests
 
+def generate_pdf(latex_content, filename):
+    tex_server_url = "http://193.108.113.66:5000/compile"  # IP TeX сервера
+    
+    response = requests.post(tex_server_url, data=latex_content.encode('utf-8'))
+    
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        return True
+    else:
+        print(f"Error: {response.text}")
+        return False
 
 def docker_tex_compile(    
     tex_file: str,
@@ -91,18 +104,18 @@ async def make_pdf(probs):
 
 
     tex_content += footer
-    texfile = f'{sections[pos]}.tex'
+    texfile = f'{title}.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
         fw.write(tex_content)
 
     # Пример использования
-    docker_tex_compile(    
-        tex_file= texfile,
-        container='texlive',
-        compiler='lualatex'
-    )
+    generate_pdf(tex_content, pdfpath.replace('tex','pdf'))
+    # docker_tex_compile(    
+    #     tex_file= texfile,
+    #     container='texlive',
+    #     compiler='lualatex'
+    # )    
 
     pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=f'{title}.pdf')
     return pdf_doc
-    

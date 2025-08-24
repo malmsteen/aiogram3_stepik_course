@@ -85,21 +85,7 @@ services:
       - ./fonts/STIX_Two_Text:/usr/local/share/fonts/STIX_Two_Text
       - ./fonts/tex-gyre-pagella:/usr/local/share/fonts/tex-gyre-pagella
     working_dir: /workspace
-    command: >
-      bash -c "
-        fc-cache -f -v &&
-        tlmgr update --self && \
-        tlmgr install babel-russian cm-unicode &&
-        tlmgr update --self && \
-        tlmgr install \
-        babel-russian \
-        collection-langcyrillic \
-        cm-super \
-        cyrillic \
-        cyrillic-bin \
-        lh;
-        sleep infinity   
-      "
+    command: sleep infinity
 networks:
   app_network:
     name: app_network
