@@ -10,10 +10,6 @@ def get_main_menu_commands(i18n: dict[str, str], role: UserRole):
                 description=i18n.get('/start_description')
             ),
             BotCommand(
-                command='/lang',
-                description=i18n.get('/lang_description')
-            ),
-            BotCommand(
                 command='/help',
                 description=i18n.get('/help_description')
             ),
@@ -27,10 +23,6 @@ def get_main_menu_commands(i18n: dict[str, str], role: UserRole):
             BotCommand(
                 command='/start',
                 description=i18n.get('/start_description')
-            ),
-            BotCommand(
-                command='/lang',
-                description=i18n.get('/lang_description')
             ),
             BotCommand(
                 command='/help',
