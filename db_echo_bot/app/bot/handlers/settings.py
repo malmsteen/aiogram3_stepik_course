@@ -46,6 +46,26 @@ async def process_any_message_when_lang(
     await state.update_data(lang_settings_msg_id=msg.message_id)
 
 
+# Этот хэндлер будет срабатывать на команду /lang
+@settings_router.message(Command(commands="lang"))
+async def process_lang_command(
+    message: Message,
+    conn: AsyncConnection,
+    i18n: dict[str, str],
+    state: FSMContext,
+    locales: list[str],
+):
+    await state.set_state(LangSG.lang)
+    user_lang = await get_user_lang(conn, user_id=message.from_user.id)
+
+    msg = await message.answer(
+        text=i18n.get("/lang"),
+        reply_markup=get_lang_settings_kb(i18n=i18n, locales=locales, checked=user_lang),
+    )
+
+    await state.update_data(lang_settings_msg_id=msg.message_id, user_lang=user_lang)
+
+
 # Этот хэндлер будет срабатывать на нажатие кнопки "Сохранить" в режиме настроек языка
 @settings_router.callback_query(F.data == "save_lang_button_data")
 async def process_save_click(

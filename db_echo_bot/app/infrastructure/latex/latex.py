@@ -16,7 +16,6 @@ def send_tex(latex_content, filename, texlive):
     response = requests.post(tex_server_url, data=latex_content.encode('utf-8'))
     
     if response.status_code == 200:
-        logger.debug(f"Got pdf, written to: pdf/{filename}")
         with open(filename, 'wb') as f:
             f.write(response.content)
         return True

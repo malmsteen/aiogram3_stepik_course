@@ -69,7 +69,7 @@ async def main(config: Config) -> None:
     dp.update.middleware(DataBaseMiddleware())
     dp.update.middleware(ShadowBanMiddleware())
     dp.update.middleware(ActivityCounterMiddleware())
-    #dp.update.middleware(LangSettingsMiddleware())
+    dp.update.middleware(LangSettingsMiddleware())
     dp.update.middleware(TranslatorMiddleware())
 
     # Запускаем поллинг
