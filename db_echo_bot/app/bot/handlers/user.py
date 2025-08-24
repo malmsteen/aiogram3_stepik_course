@@ -107,16 +107,18 @@ async def process_sections_command(message: Message):
 
 # срабатывает на нажатие кнопки с темой
 @user_router.callback_query(IsDigitCallbackData())
-async def process_section_press(callback: CallbackQuery, conn: AsyncConnection,):
+async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, texlive):
     num = callback.data
+    callback.answer()
     if int(num) >= 5:
         num = str(int(num)+1)
     problems = await get_problem_texts(conn, num) 
     await callback.message.edit_text(
-        text="⚙️✨ Компиляция началась...",
-        reply_markup=create_sections_keyboard())  
-    pdf_doc = await make_pdf(problems)
-    # await message.answer_document(pdf_doc)
+        text=f"⚙️✨ Компиляция началась...",
+        reply_markup=create_sections_keyboard())
+    
+    pdf_doc = await make_pdf(problems, texlive)    
+    # await message.answer()
     await callback.message.edit_text(
         text="✅ Готово! Можете выбрать еще",
         reply_markup=create_sections_keyboard(),

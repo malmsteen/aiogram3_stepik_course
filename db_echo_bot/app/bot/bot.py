@@ -58,6 +58,8 @@ async def main(config: Config) -> None:
     # формируем список локалей из ключей словаря с переводами
     locales = list(translations.keys())
 
+    texlive = config.tex
+
     # Подключаем роутеры в нужном порядке
     logger.info("Including routers...")
     dp.include_routers(settings_router, admin_router, user_router, others_router)
@@ -76,7 +78,8 @@ async def main(config: Config) -> None:
             bot, db_pool=db_pool, 
             translations=translations, 
             locales=locales, 
-            admin_ids=config.bot.admin_ids
+            admin_ids=config.bot.admin_ids,
+            texlive=texlive
         )
     except Exception as e:
         logger.exception(e)

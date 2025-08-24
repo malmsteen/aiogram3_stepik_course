@@ -154,6 +154,8 @@ heightrounded
 \makeatother
 
 \usepackage{enumitem}
+\setlist{nolistsep}
+
 \AddEnumerateCounter{\asbuk}{\@asbuk}{\cyrm}
 \setlist[enumerate,1]{label=\asbuk*),ref=\alph*}
 \renewcommand{\theenumii}{\asbuk{enumii}}

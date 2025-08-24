@@ -1,8 +1,27 @@
+import logging
+
 import subprocess
 import os
 import regex as re
 from app.infrastructure.latex.util import footer, header
 from aiogram.types.input_file import FSInputFile
+import requests
+
+logger = logging.getLogger(__name__)
+
+
+def send_tex(latex_content, filename, texlive):
+    tex_server_url = f"http://{texlive.host}:{texlive.port}/compile"  # IP TeX сервера
+    
+    response = requests.post(tex_server_url, data=latex_content.encode('utf-8'))
+    
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        return True
+    else:
+        print(f"Error: {response.text}")
+        return False
 
 
 def docker_tex_compile(    
@@ -59,7 +78,7 @@ sections = [
     "Задачи по теории чисел",    
 ]
 
-async def make_pdf(probs):
+async def make_pdf(probs, texlive):
     tex_content = ''
 
     # with open('header.txt','r', encoding='utf-8') as fr:
@@ -97,11 +116,14 @@ async def make_pdf(probs):
         fw.write(tex_content)
 
     # Пример использования
-    docker_tex_compile(    
-        tex_file= texfile,
-        container='texlive',
-        compiler='lualatex'
-    )
+
+    pdfname = pdfpath.replace('tex','pdf')
+    send_tex(tex_content, pdfname, texlive)
+    # docker_tex_compile(    
+    #     tex_file= texfile,
+    #     container='texlive',
+    #     compiler='lualatex'
+    # )    
 
     pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=f'{title}.pdf')
     return pdf_doc

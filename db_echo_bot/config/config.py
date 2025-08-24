@@ -36,6 +36,11 @@ class LoggSettings:
     level: str
     format: str
 
+@dataclass
+class TexliveSettings:
+    host: str
+    port: int
+
 
 @dataclass
 class Config:
@@ -43,7 +48,7 @@ class Config:
     db: DatabaseSettings
     redis: RedisSettings
     log: LoggSettings
-
+    tex: TexliveSettings
 
 def load_config(path: str | None = None) -> Config:
     env = Env()
@@ -91,9 +96,15 @@ def load_config(path: str | None = None) -> Config:
 
     logger.info("Configuration loaded successfully")
 
+    tex = TexliveSettings(
+        host=env("TEXLIVE_HOST"),
+        port=env("TEXLIVE_PORT")
+    )
+    
     return Config(
         bot=BotSettings(token=token, admin_ids=admin_ids),
         db=db,
         redis=redis,
-        log=logg_settings
+        log=logg_settings,
+        tex=tex
     )
