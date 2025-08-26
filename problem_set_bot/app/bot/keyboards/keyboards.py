@@ -59,9 +59,23 @@ sections = [
 
 def create_sections_keyboard() -> InlineKeyboardMarkup:    
     buttons = [InlineKeyboardButton(text=text, callback_data=str(data+1)) for data, text in enumerate(sections)]
+    all_btn = InlineKeyboardButton(text="Все типы задач", callback_data = str(len(sections) + 1))
+    buttons.append(all_btn)
     kb_builder = InlineKeyboardBuilder()
     
 
     # Распаковываем список с кнопками в билдер методом `row`
     kb_builder.row(*buttons, width=2)    
+    return kb_builder.as_markup()
+
+def answer_keyboard(i18n: dict) -> InlineKeyboardMarkup:
+    cancel_btn = InlineKeyboardButton(
+        text=i18n.get('cancel_ans'),
+        callback_data = 'cancel_ans')
+    send_ans_btn = InlineKeyboardButton(
+        text=i18n.get('send_ans'),
+        callback_data = 'send_ans')
+    kb_builder = InlineKeyboardBuilder()
+    kb_builder.row(cancel_btn, send_ans_btn, widh=2)
+
     return kb_builder.as_markup()

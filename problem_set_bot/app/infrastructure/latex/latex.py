@@ -98,33 +98,106 @@ async def make_pdf(probs, texlive):
     for prob in probs:               
         
         png = f"app/infrastructure/latex/images/{prob['source_id']}.png"
-        fullimgpath = os.path.join(curdir, png)
-        print(fullimgpath, os.path.exists(fullimgpath))
+        fullimgpath = os.path.join(curdir, png)        
         if os.path.exists(fullimgpath):
             fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\end{center}'
         else:
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
-        tex_content +=  f'\n\\begin{{problem}}[{prob['source_id']}]\n{{\n{text}{fig}\n}}\n\\end{{problem}}'
-
+        tex_content +=  f'\n\\begin{{problem}}[{prob['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
 
     tex_content += footer
     texfile = f'{sections[pos]}.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
         fw.write(tex_content)
-
-    # Пример использования
-
+    
     pdfname = pdfpath.replace('tex','pdf')
     send_tex(tex_content, pdfname, texlive)
-    # docker_tex_compile(    
-    #     tex_file= texfile,
-    #     container='texlive',
-    #     compiler='lualatex'
-    # )    
 
     pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=f'{title}.pdf')
     return pdf_doc
+
+
+async def make_pdf_all(probs, texlive):
+
+    tex_content = ''
+    tex_content += header
+    pos = int(probs[0]['position'])-1
+    title = sections[pos]
+    tex_content += f"\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
+    curdir = os.getcwd()
+
+    j = 0
+    for i in range(len(probs)):
+        problem = probs[i]
+        pos = int(problem['position']) - 1
+        if "Решите неравенство" in problem['text']:
+            problem['text'] = re.sub("Решите неравенство",'', problem['text'])
+            problem['text'] = re.sub('\$(.*?)\$', r'$$\1$$', problem['text'])
+            problem['text'] = re.sub('(?<=\$)\.', '', problem['text'])            
+        if pos != j:
+            j += 1
+            action = ''
+            title = sections[j]
+            if pos == 14:
+                action = '\nРешите неравенства'
+            tex_content += f"\\end{{multicols}}\n\section*{{{title}}}\n{action}\n\\begin{{multicols}}{{2}}"            
+
+        png = f"app/infrastructure/latex/images/{problem['source_id']}.png"
+        fullimgpath = os.path.join(curdir, png)        
+        if os.path.exists(fullimgpath):
+            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{problem['source_id']}}}' + '\end{center}'
+        else:
+            fig = ""
+
+        text = re.sub('([-+=]+)', r'\\hm{\1}', problem['text'])    
+        tex_content +=  f'\n\\begin{{problem}}[{problem['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
+
+
+    tex_content += footer
+    texfile = f'Все типы задач ФИПИ.tex'
+    pdfpath = f'pdf/{texfile}'
+    with open(pdfpath, 'w', encoding='utf-8') as fw:
+        fw.write(tex_content)
+
+    pdfname = pdfpath.replace('tex','pdf')
+    send_tex(tex_content, pdfname, texlive)
+
+    pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=texfile.replace('tex','pdf'))
+    return pdf_doc
     
+
+async def make_problems_pdf(problems, texlive):
+    tex_content = ''
+    tex_content += header
+    
+    title = "Подборка задач"
+    tex_content += f"\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
+    curdir = os.getcwd()
+    # print(curdir)
+    for prob in problems:               
+        
+        png = f"app/infrastructure/latex/images/{prob['source_id']}.png"
+        fullimgpath = os.path.join(curdir, png)        
+        if os.path.exists(fullimgpath):
+            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\end{center}'
+        else:
+            fig = ""
+
+        text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
+        tex_content +=  f'\n\\begin{{problem}}[{prob['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
+
+    tex_content += footer
+    texfile = f'{title}.tex'
+    pdfpath = f'pdf/{texfile}'
+    # logger.debug(f"{tex_content}")
+
+    with open(pdfpath, 'w', encoding='utf-8') as fw:
+        fw.write(tex_content)
+    pdfname = pdfpath.replace('tex','pdf')
+    send_tex(tex_content, pdfname, texlive)
+
+    pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=texfile.replace('tex','pdf'))
+    return pdf_doc

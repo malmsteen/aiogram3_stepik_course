@@ -289,7 +289,7 @@ async def get_statistics(conn: AsyncConnection) -> tuple[Any, ...] | None:
 async def get_problem_texts(
         conn: AsyncConnection,
         num: int
-) -> list:
+) -> list[dict]:
     async with conn.cursor() as cursor:
         limit = 10
         data = await cursor.execute(
@@ -309,6 +309,75 @@ async def get_problem_texts(
 
     return out
 
+async def get_all_problem_types(
+        conn: AsyncConnection
+        ) -> list[dict]:
+    limit = 10
+    rows = []
+    for i in range(1,20):
+        async with conn.cursor() as cursor:            
+            data = await cursor.execute(
+                query=f"""
+                    SELECT text, source_id, position
+                    FROM problems
+                    WHERE position=%s
+                    LIMIT {limit};              
+                """,
+                params=(i,)
+            )
+            rows.extend(await data.fetchall())    
+    logger.info(f"Got problems, {limit} of each type")   
+    out = []
+    for r in rows:
+        out.append({"text":r[0], "source_id":r[1], "position":r[2]})
+    
+    return out
+
+async def get_problems_by_ids(
+        conn: AsyncConnection,
+        ids: list
+        ) -> list[dict]:
+    rows = []
+    for id in ids:
+        async with conn.cursor() as cursor:            
+            data = await cursor.execute(
+                query=f"""
+                    SELECT text, source_id, position
+                    FROM problems
+                    WHERE source_id LIKE %s                    ;              
+                """,
+                params=(f"{id}%".upper(),)
+            )
+            rows.extend(await data.fetchall())    
+    logger.info(f"Got problem with ids {ids}")
+    out = []
+    for r in rows:
+        out.append({"text":r[0], "source_id":r[1], "position":r[2]})
+    return out
 
 
-
+async def add_problem_answer(
+        conn: AsyncConnection,
+        source_id,
+        user_id,        
+        answer,
+        problem_type
+        ):
+    async with conn.cursor() as cursor:
+        await cursor.execute(
+            query="""
+                INSERT INTO answers(source_id, user_id, answer, type)
+                VALUES(%s, %s, %s, %s)
+                ON CONFLICT DO NOTHING;
+            """,
+            params=(source_id.upper(), user_id, answer, problem_type)
+        )
+    logger.info(
+        "Answer added. Table=`%s`, source_id=`%s`, user_id=%d, created_at=`%s`, answer=`%s` type=`%s`",
+        "answers",
+        source_id,
+        user_id,        
+        datetime.now(timezone.utc),
+        answer,
+        problem_type      
+    )

@@ -38,7 +38,7 @@ async def main():
                     await cursor.execute(
                         query="""
                             CREATE TABLE IF NOT EXISTS problems(
-                                id SERIAL PRIMARY KEY,
+                                problem_id SERIAL PRIMARY KEY,
                                 topics TEXT[],
                                 type VARCHAR(20),
                                 source_id VARCHAR(10),

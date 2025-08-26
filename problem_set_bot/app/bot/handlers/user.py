@@ -1,18 +1,18 @@
 import logging
 from contextlib import suppress
 
-from aiogram import Bot, Router
+from aiogram import Bot, Router, F
 from aiogram.enums import BotCommandScopeType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import KICKED, ChatMemberUpdatedFilter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BotCommandScopeChat, ChatMemberUpdated, Message, CallbackQuery
 from app.bot.enums.roles import UserRole
-from app.bot.filters.filters import IsDigitCallbackData
+from app.bot.filters.filters import IsDigitCallbackData, HexIdsInMessage, FloatAns
 from app.bot.keyboards.menu_button import get_main_menu_commands
-from app.bot.keyboards.keyboards import create_sections_keyboard
+from app.bot.keyboards.keyboards import create_sections_keyboard, answer_keyboard
 from app.bot.states.states import LangSG
-from app.infrastructure.latex.latex import make_pdf
+from app.infrastructure.latex.latex import make_pdf, make_pdf_all, make_problems_pdf
 
 
 from app.infrastructure.database.db import (
@@ -20,7 +20,10 @@ from app.infrastructure.database.db import (
     change_user_alive_status,
     get_user,
     get_user_lang,
-    get_problem_texts
+    get_problem_texts,
+    get_all_problem_types,
+    get_problems_by_ids,
+    add_problem_answer
 )
 from psycopg.connection_async import AsyncConnection
 
@@ -98,29 +101,36 @@ async def process_user_blocked_bot(event: ChatMemberUpdated, conn: AsyncConnecti
 
 # Этот хэндлер срабатывает на команду /sections
 @user_router.message(Command(commands="sections"))
-async def process_sections_command(message: Message):
+async def process_sections_command(message: Message, i18n: dict[str, str]):
     keyboard = create_sections_keyboard()
     await message.answer(
-        text='Выбирете тему из списка, и документ отправится на печать',
+        text=i18n.get('/sections'),
         reply_markup=keyboard,
     )
 
+
 # срабатывает на нажатие кнопки с темой
 @user_router.callback_query(IsDigitCallbackData())
-async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, texlive):
+async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, texlive, i18n: dict[str, str]):
     num = callback.data
-    callback.answer()
-    if int(num) >= 5:
-        num = str(int(num)+1)
-    problems = await get_problem_texts(conn, num) 
+    await callback.answer()
+    
     await callback.message.edit_text(
-        text=f"⚙️✨ Компиляция началась...",
+        text=i18n.get("compiling"),
         reply_markup=create_sections_keyboard())
     
-    pdf_doc = await make_pdf(problems, texlive)    
+    if int(num) >= 5:
+        num = str(int(num)+1)
+    if int(num) <= 19:        
+        problems = await get_problem_texts(conn, num)
+        pdf_doc = await make_pdf(problems, texlive) 
+    else:
+        problems = await get_all_problem_types(conn)
+        pdf_doc = await make_pdf_all(problems, texlive)
+       
     # await message.answer()
     await callback.message.edit_text(
-        text="✅ Готово! Можете выбрать еще",
+        text=i18n.get('compilation_done'),
         reply_markup=create_sections_keyboard(),
         show_alert=False)
     await callback.message.answer_document(
@@ -128,3 +138,75 @@ async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, 
         # text=num,
         # reply_markup=callback.message.reply_markup
     )
+
+@user_router.message(Command(commands="problems"), HexIdsInMessage())
+async def process_problems_command(message: Message, source_ids: list[str], conn: AsyncConnection, i18n, texlive):
+    problems = await get_problems_by_ids(conn, source_ids)
+    logger.debug(f"Source ids: {source_ids}")
+    logger.debug(f"Problems: {problems}")
+    await message.answer(
+        text=i18n.get('compiling')
+    )
+    pdf_doc = await make_problems_pdf(problems, texlive)
+    await message.answer.edit_text(text=i18n.get('compilation_done'))
+    await message.answer_document(
+        document=pdf_doc
+        # text=num,
+        # reply_markup=callback.message.reply_markup
+    )
+
+@user_router.message(Command(commands="problems"))
+async def process_problems(message: Message, i18n: dict[str, str]):
+    await message.answer(text=i18n.get('/problems'))
+
+
+@user_router.message(Command(commands="addanswer"))
+async def process_answer_adding(message: Message, i18n: dict[str, str]):
+    await message.answer(
+        text=i18n.get('/addanswer'),
+        #reply_markup=answer_keyboard()
+        )    
+
+# отсылка ответа
+@user_router.message(F.photo, HexIdsInMessage())
+async def process_photo_ans(message: Message, i18n: dict, conn: AsyncConnection, source_ids: list[str]):
+        if len(message.caption) < 3:
+            await message.answer(
+                text = i18n.get('small_id')
+            )
+            return 
+        
+        await add_problem_answer(
+            conn,
+            source_id=source_ids[0],
+            user_id=message.from_user.id,            
+            answer=message.photo[0].file_id,
+            problem_type='long'
+            )
+        await message.answer(
+            text = i18n.get('ans_been_sent')
+        )
+        logger.debug(f"Вы прислали фото-ответ, file_id={message.photo[0].file_id} к задаче {source_ids[0]}. Отправлен")
+
+@user_router.message(HexIdsInMessage(), FloatAns())
+async def process_text_ans(message: Message, i18n: dict, conn: AsyncConnection, float_num: str, source_ids: list[str]):
+        if len(source_ids[0]) < 3:
+            await message.answer(
+                text = i18n.get('small_id')
+            )
+            return
+        
+        await add_problem_answer(
+            conn,
+            source_id=source_ids[0],
+            user_id=message.from_user.id,                        
+            answer=float_num,
+            problem_type='short'
+            )
+        await message.answer(
+            text = i18n.get('ans_been_sent')
+        )          
+        logger.debug(f"Ваш ответ {float_num} к задаче {source_ids[0]}. Отправлен")
+
+
+    
