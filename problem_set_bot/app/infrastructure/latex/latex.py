@@ -169,7 +169,7 @@ async def make_pdf_all(probs, texlive):
     return pdf_doc
     
 
-async def make_problems_pdf(problems, texlive):
+async def make_problems_pdf(problems, user_id, texlive):
     tex_content = ''
     tex_content += header
     
@@ -190,14 +190,15 @@ async def make_problems_pdf(problems, texlive):
         tex_content +=  f'\n\\begin{{problem}}[{prob['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
 
     tex_content += footer
-    texfile = f'{title}.tex'
-    pdfpath = f'pdf/{texfile}'
+    texfile = f'{title + str(user_id)}.tex'
+    texpath = f'pdf/{texfile}'
+    pdfpath = texpath.replace('tex','pdf')
     # logger.debug(f"{tex_content}")
 
     with open(pdfpath, 'w', encoding='utf-8') as fw:
         fw.write(tex_content)
-    pdfname = pdfpath.replace('tex','pdf')
-    send_tex(tex_content, pdfname, texlive)
+    
+    send_tex(tex_content, pdfpath, texlive)
 
-    pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=texfile.replace('tex','pdf'))
+    pdf_doc  = FSInputFile(pdfpath, filename=f'{title}.pdf')
     return pdf_doc

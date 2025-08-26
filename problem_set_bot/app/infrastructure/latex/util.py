@@ -1,4 +1,4 @@
-
+import os
 
 header = r"""
 \documentclass[11pt, luatex]{article}% объявление класса LaTex, размер шроифта, компилятор, две колонки
@@ -122,18 +122,19 @@ heightrounded
 
 %-------------------- Форматирование колонтитулов --------------------
 \pagestyle{fancy}
-\rhead{\small{\href{https://repetit-fm.ru}{repetit-fm.ru}}}
+\lhead{\small{\href{https://repetit-fm.ru}{repetit-fm.ru}}}
+\rhead{ЗАДАЧИ ФИПИ}
 %	\lhead{\uppercase{\small\textsl{Колебания и волны}}}
 %	\chead{\uppercase{\small{Лето, 2023}}}
-\rfoot{\fontspec{Pecita}{Евгений Филипенко}}
+%\rfoot{\fontspec{Pecita}{Евгений Филипенко}}
 %	\lfoot{\href{https://youtube.com}{\includegraphics[height=20pt]{images/youtube-icon.pdf}}}
 
 \lfoot{
-	\href{https://www.youtube.com/@yowfel}{\resizebox{!}{4mm} {\color{red} \faIcon{youtube}}}
-	\hspace*{7mm}
+	%\href{https://www.youtube.com/@yowfel}{\resizebox{!}{4mm} {\color{red} \faIcon{youtube}}}
+	%\hspace*{7mm}
 	\href{https://vk.com/club222480852}{\resizebox{!}{4mm}{\color{vkblue} \faIcon{vk}}}
 	\hspace*{7mm}
-	\href{https://t.me/math_and_beyond}{\resizebox{!}{4.5mm}{\color{tgblue} \faIcon{telegram}}}
+	\href{https://t.me/math_and_beyond}{\resizebox{!}{4.5mm}{\color{myblue} \faIcon{telegram}}} @math\_and\_beyond
 } % Requires
 \cfoot{\thepage}
 \setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt}
@@ -231,3 +232,9 @@ footer = r"""
 
 \end{document}
 """
+
+
+async def remove_user_files(user_id, wordir='pdf'):
+    tempfiles = [f for f in os.listdir(wordir) if str(user_id) in f]
+    for f in tempfiles:
+        os.remove(os.path.join('pdf', f))

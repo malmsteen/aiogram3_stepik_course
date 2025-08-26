@@ -1,5 +1,6 @@
 import logging
 from contextlib import suppress
+import os
 
 from aiogram import Bot, Router, F
 from aiogram.enums import BotCommandScopeType
@@ -13,6 +14,7 @@ from app.bot.keyboards.menu_button import get_main_menu_commands
 from app.bot.keyboards.keyboards import create_sections_keyboard, answer_keyboard
 from app.bot.states.states import LangSG
 from app.infrastructure.latex.latex import make_pdf, make_pdf_all, make_problems_pdf
+from app.infrastructure.latex.util import remove_user_files
 
 
 from app.infrastructure.database.db import (
@@ -141,19 +143,27 @@ async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, 
 
 @user_router.message(Command(commands="problems"), HexIdsInMessage())
 async def process_problems_command(message: Message, source_ids: list[str], conn: AsyncConnection, i18n, texlive):
+    user_id = message.from_user.id
+    if not all([len(source_id)>=3 for source_id  in source_ids]):
+        await message.answer(
+                text = i18n.get('small_id')
+            )
+        return 
+    
     problems = await get_problems_by_ids(conn, source_ids)
     logger.debug(f"Source ids: {source_ids}")
     logger.debug(f"Problems: {problems}")
     await message.answer(
         text=i18n.get('compiling')
     )
-    pdf_doc = await make_problems_pdf(problems, texlive)
-    await message.answer.edit_text(text=i18n.get('compilation_done'))
+    pdf_doc = await make_problems_pdf(problems, user_id, texlive)
+    await message.answer(text=i18n.get('compilation_done'))
     await message.answer_document(
         document=pdf_doc
         # text=num,
         # reply_markup=callback.message.reply_markup
     )
+    await remove_user_files(user_id)
 
 @user_router.message(Command(commands="problems"))
 async def process_problems(message: Message, i18n: dict[str, str]):

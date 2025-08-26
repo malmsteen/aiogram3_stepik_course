@@ -45,6 +45,10 @@ def get_main_menu_commands(i18n: dict[str, str], role: UserRole):
                 description='Выбор конкретных задач'
             ),
             BotCommand(
+                command='/addanswer',
+                description='Отправить ответ'
+            ),
+            BotCommand(
                 command='/ban',
                 description=i18n.get('/ban_description')
             ),
