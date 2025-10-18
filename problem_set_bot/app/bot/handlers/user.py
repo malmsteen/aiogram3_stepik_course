@@ -121,14 +121,10 @@ async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, 
         text=i18n.get("compiling"),
         reply_markup=create_sections_keyboard())
     
-    if int(num) >= 5:
-        num = str(int(num)+1)
-    if int(num) <= 19:        
-        problems = await get_problem_texts(conn, num)
-        pdf_doc = await make_pdf(problems, texlive) 
-    else:
-        problems = await get_all_problem_types(conn)
-        pdf_doc = await make_pdf_all(problems, texlive)
+           
+    problems = await get_problem_texts(conn, num)
+    pdf_doc = await make_pdf(problems, texlive) 
+    
        
     # await message.answer()
     await callback.message.edit_text(

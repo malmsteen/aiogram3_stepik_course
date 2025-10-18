@@ -60,8 +60,8 @@ sections = [
     "Планиметрия. Часть I",
     "Векторы",
     "Стереометрия. Часть I",
-    "Теория вероятности",
-    "",
+    "Теория вероятности I",
+    "Теория вероятности II",
     "Уравнения. Часть I",
     "Вычисление и преобразование выражений",
     "Применение производной и первообразной",
@@ -79,20 +79,13 @@ sections = [
 ]
 
 async def make_pdf(probs, texlive):
-    tex_content = ''
-
-    # with open('header.txt','r', encoding='utf-8') as fr:
-    #     header = fr.read()
     
-    # with open('footer.txt', 'r', encoding='utf-8') as fr:
-    #     footer = fr.read()
+    HREF_PREF = texlive.fipiurl
 
-
-    
-    tex_content += header
+    tex_content = header
     pos = int(probs[0]['position'])-1
     title = sections[pos]
-    tex_content += f"\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
+    tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
     curdir = os.getcwd()
     # print(curdir)
     for prob in probs:               
@@ -100,12 +93,13 @@ async def make_pdf(probs, texlive):
         png = f"app/infrastructure/latex/images/{prob['source_id']}.png"
         fullimgpath = os.path.join(curdir, png)        
         if os.path.exists(fullimgpath):
-            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\end{center}'
+            fig = "\\begin{center}" + f'\\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\\end{center}'
         else:
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
-        tex_content +=  f'\n\\begin{{problem}}[{prob['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
+        href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
+        tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
     tex_content += footer
     texfile = f'{sections[pos]}.tex'
@@ -122,11 +116,12 @@ async def make_pdf(probs, texlive):
 
 async def make_pdf_all(probs, texlive):
 
-    tex_content = ''
-    tex_content += header
+    HREF_PREF = texlive.fipiurl
+
+    tex_content = header
     pos = int(probs[0]['position'])-1
     title = sections[pos]
-    tex_content += f"\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
+    tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
     curdir = os.getcwd()
 
     j = 0
@@ -135,25 +130,26 @@ async def make_pdf_all(probs, texlive):
         pos = int(problem['position']) - 1
         if "Решите неравенство" in problem['text']:
             problem['text'] = re.sub("Решите неравенство",'', problem['text'])
-            problem['text'] = re.sub('\$(.*?)\$', r'$$\1$$', problem['text'])
-            problem['text'] = re.sub('(?<=\$)\.', '', problem['text'])            
+            problem['text'] = re.sub(r'\$(.*?)\$', r'$$\1$$', problem['text'])
+            problem['text'] = re.sub(r'(?<=\$)\.', '', problem['text'])            
         if pos != j:
             j += 1
             action = ''
             title = sections[j]
             if pos == 14:
                 action = '\nРешите неравенства'
-            tex_content += f"\\end{{multicols}}\n\section*{{{title}}}\n{action}\n\\begin{{multicols}}{{2}}"            
+            tex_content += f"\\end{{multicols}}\n\\section*{{{title}}}\n{action}\n\\begin{{multicols}}{{2}}"            
 
         png = f"app/infrastructure/latex/images/{problem['source_id']}.png"
         fullimgpath = os.path.join(curdir, png)        
         if os.path.exists(fullimgpath):
-            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{problem['source_id']}}}' + '\end{center}'
+            fig = "\\begin{center}" + f'\\includegraphics[scale=0.6]{{images/{problem['source_id']}}}' + '\\end{center}'
         else:
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', problem['text'])    
-        tex_content +=  f'\n\\begin{{problem}}[{problem['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
+        href = f"\\href{{{HREF_PREF + problem['source_id']}}}{{{problem['source_id']}}}"
+        tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{problem['text']}{fig}}}\n\\end{{problem}}'
 
 
     tex_content += footer
@@ -168,13 +164,47 @@ async def make_pdf_all(probs, texlive):
     pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=texfile.replace('tex','pdf'))
     return pdf_doc
     
+async def make_variant(probs, texlive):
+    
+    HREF_PREF = texlive.fipiurl
+
+    tex_content = header    
+    title = "Вариант"
+    tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
+    curdir = os.getcwd()
+    # print(curdir)
+    for prob in probs:               
+        
+        png = f"app/infrastructure/latex/images/{prob['source_id']}.png"
+        fullimgpath = os.path.join(curdir, png)        
+        if os.path.exists(fullimgpath):
+            fig = "\\begin{center}" + f'\\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\\end{center}'
+        else:
+            fig = ""
+
+        text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
+        href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
+        tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
+
+    tex_content += footer
+    texfile = f'{title}.tex'
+    pdfpath = f'pdf/{texfile}'
+    with open(pdfpath, 'w', encoding='utf-8') as fw:
+        fw.write(tex_content)
+    
+    pdfname = pdfpath.replace('tex','pdf')
+    send_tex(tex_content, pdfname, texlive)
+
+    pdf_doc  = FSInputFile(pdfpath.replace('tex','pdf'), filename=f'{title}.pdf')
+    return pdf_doc
 
 async def make_problems_pdf(problems, user_id, texlive):
-    tex_content = ''
-    tex_content += header
-    
+   
+    HREF_PREF = texlive.fipiurl
+
+    tex_content = header    
     title = "Подборка задач"
-    tex_content += f"\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
+    tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
     curdir = os.getcwd()
     # print(curdir)
     for prob in problems:               
@@ -182,12 +212,13 @@ async def make_problems_pdf(problems, user_id, texlive):
         png = f"app/infrastructure/latex/images/{prob['source_id']}.png"
         fullimgpath = os.path.join(curdir, png)        
         if os.path.exists(fullimgpath):
-            fig = "\\begin{center}" + f'\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\end{center}'
+            fig = "\\begin{center}" + f'\\includegraphics[scale=0.6]{{images/{prob['source_id']}}}' + '\\end{center}'
         else:
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
-        tex_content +=  f'\n\\begin{{problem}}[{prob['source_id']}]\n{{{text}{fig}}}\n\\end{{problem}}'
+        href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
+        tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
     tex_content += footer
     texfile = f'{title + str(user_id)}.tex'

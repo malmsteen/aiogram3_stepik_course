@@ -63,7 +63,7 @@ async def main():
 
 
 
-    with open('fipi_probs_last_w_pos.json', 'r') as fr:
+    with open('fipi_probs_last_w_pos_after_11_10_25.json', 'r') as fr:
         problems = json.load(fr)
 
     try:
@@ -87,11 +87,10 @@ async def main():
                         position = problem['position']
                         # print(problem)
                         query = f"""
-                        INSERT INTO problems (topics, type, img, url, text, position, source_id, source) 
+                        INSERT INTO problems (topics, type, url, text, position, source_id, source) 
                         VALUES (
                             ARRAY[{','.join(f"'{topic.replace("'", "''")}'" for topic in topics)}],
-                            '{prob_type}',                                      
-                            {f"'{img}'" if img else 'NULL'}, 
+                            '{prob_type}',                         
                             {f"'{url}'"}, 
                             '{text.replace("'", "''")}', 
                             {position},

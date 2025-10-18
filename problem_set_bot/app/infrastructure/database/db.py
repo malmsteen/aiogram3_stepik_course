@@ -34,7 +34,7 @@ async def add_user(
             params={
                 "user_id": user_id,
                 "username": username,
-                "language": language,
+                "language": 'ru',
                 "role": role,
                 "is_alive": is_alive,
                 "banned": banned,
@@ -291,7 +291,7 @@ async def get_problem_texts(
         num: int
 ) -> list[dict]:
     async with conn.cursor() as cursor:
-        limit = 10
+        limit = 100
         data = await cursor.execute(
             query=f"""
                 SELECT text, source_id, position
@@ -312,7 +312,7 @@ async def get_problem_texts(
 async def get_all_problem_types(
         conn: AsyncConnection
         ) -> list[dict]:
-    limit = 10
+    limit = 10000
     rows = []
     for i in range(1,20):
         async with conn.cursor() as cursor:            

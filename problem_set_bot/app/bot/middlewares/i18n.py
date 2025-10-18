@@ -37,6 +37,7 @@ class TranslatorMiddleware(BaseMiddleware):
                 user_lang = user.language_code
 
         translations: dict = data.get("translations")
+        user_lang = 'ru'
         i18n: dict = translations.get(user_lang)
 
         if i18n is None:

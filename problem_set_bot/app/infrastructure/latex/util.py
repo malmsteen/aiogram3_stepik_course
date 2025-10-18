@@ -45,6 +45,12 @@ heightrounded
 \usepackage[protrusion=true,expansion, shrink=30]{microtype} %нужно, чтобы строки не торчали (улучшает расчёт расстояний между словами в строке)
 %---------------------------------------------------------------------------
 
+\usepackage[math-style=TeX]{unicode-math} % пакет подключающий нестандартные шрифты для математического режима
+\unimathsetup{math-style=TeX} % стиль формул
+\setmathfont{texgyrepagella-math.otf} % задаёт шрифт матем.режима
+\usepackage[protrusion=true,expansion, shrink=30]{microtype} %нужно, чтобы строки не торчали (улучшает расчёт расстояний между словами в строке)
+%---------------------------------------------------------------------------
+
 
 \usepackage[framemethod=pstricks]{mdframed}
 \usepackage{xcolor}
@@ -114,7 +120,7 @@ heightrounded
 %---------------------- Гиперссылки ---------------------------
 \usepackage[]{hyperref}
 \definecolor{violet}{HTML}{800080} % цвет гиперссылок
-\hypersetup{linkcolor=linkcolor,citecolor=darkred, urlcolor = violet, colorlinks=true}
+\hypersetup{linkcolor=myblue	,citecolor=darkred, urlcolor = myblue, colorlinks=true}
 \hypersetup{pdfhighlight=/P}
 \usepackage[all]{hypcap}
 %--------------------------------------------------------------------
@@ -122,11 +128,12 @@ heightrounded
 
 %-------------------- Форматирование колонтитулов --------------------
 \pagestyle{fancy}
-\lhead{\small{\href{https://repetit-fm.ru}{repetit-fm.ru}}}
-\rhead{ЗАДАЧИ ФИПИ}
+\rhead{\small{\href{https://repetit-fm.ru}{repetit-fm.ru}}}
 %	\lhead{\uppercase{\small\textsl{Колебания и волны}}}
 %	\chead{\uppercase{\small{Лето, 2023}}}
 %\rfoot{\fontspec{Pecita}{Евгений Филипенко}}
+\lhead{\uppercase{\small\textsl{Профильная математика}}}
+\rhead{\uppercase{\small\textsl{Задачи ФИПИ}}}
 %	\lfoot{\href{https://youtube.com}{\includegraphics[height=20pt]{images/youtube-icon.pdf}}}
 
 \lfoot{
@@ -164,8 +171,9 @@ heightrounded
 
 \usepackage{answers}
 \usepackage{multicol}
+\usepackage{multirow}
 
-\setlength{\parindent}{0.0mm}
+%\setlength{\parindent}{0.0mm}
 
 \hypersetup{colorlinks=true,linkcolor=myblue}
 

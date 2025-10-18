@@ -40,6 +40,8 @@ class LoggSettings:
 class TexliveSettings:
     host: str
     port: int
+    fipiurl: str
+
 
 
 @dataclass
@@ -49,6 +51,7 @@ class Config:
     redis: RedisSettings
     log: LoggSettings
     tex: TexliveSettings
+
 
 def load_config(path: str | None = None) -> Config:
     env = Env()
@@ -98,8 +101,11 @@ def load_config(path: str | None = None) -> Config:
 
     tex = TexliveSettings(
         host=env("TEXLIVE_HOST"),
-        port=env("TEXLIVE_PORT")
+        port=env("TEXLIVE_PORT"),
+        fipiurl=env("HREF_PREF")
     )
+
+
     
     return Config(
         bot=BotSettings(token=token, admin_ids=admin_ids),

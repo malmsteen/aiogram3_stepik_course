@@ -56,7 +56,8 @@ async def main(config: Config) -> None:
     # Получаем словарь с переводами
     translations = get_translations()
     # формируем список локалей из ключей словаря с переводами
-    locales = list(translations.keys())
+    # locales = list(translations.keys())
+    locales = ['ru']
 
     texlive = config.tex
 
