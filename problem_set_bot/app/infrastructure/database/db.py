@@ -306,8 +306,8 @@ async def get_problem_texts(
     out = []
     for r in rows:
         out.append({"text":r[0], "source_id":r[1], "position":r[2]})
-
     return out
+
 
 async def get_all_problem_types(
         conn: AsyncConnection
@@ -329,9 +329,31 @@ async def get_all_problem_types(
     logger.info(f"Got problems, {limit} of each type")   
     out = []
     for r in rows:
-        out.append({"text":r[0], "source_id":r[1], "position":r[2]})
-    
+        out.append({"text":r[0], "source_id":r[1], "position":r[2]})    
     return out
+
+
+async def get_variant(
+        conn: AsyncConnection,        
+        ) -> list[dict]:
+    rows = []
+    async with conn.cursor() as cursor:       
+        data = await cursor.execute(
+            query="""
+                SELECT DISTINCT ON (position) 
+                text, source_id
+                FROM problems
+                WHERE position BETWEEN 1 AND 19
+                ORDER BY position, RANDOM();
+            """,
+        )
+        rows.extend(await data.fetchall())
+    logger.info(f"Got {len(rows)} problems for variant")
+    out = []
+    for r in rows:
+        out.append({"text":r[0], "source_id":r[1]})
+    return out
+
 
 async def get_problems_by_ids(
         conn: AsyncConnection,

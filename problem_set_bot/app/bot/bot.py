@@ -60,6 +60,7 @@ async def main(config: Config) -> None:
     locales = ['ru']
 
     texlive = config.tex
+    
 
     # Подключаем роутеры в нужном порядке
     logger.info("Including routers...")
@@ -80,7 +81,7 @@ async def main(config: Config) -> None:
             translations=translations, 
             locales=locales, 
             admin_ids=config.bot.admin_ids,
-            texlive=texlive
+            texlive=texlive        
         )
     except Exception as e:
         logger.exception(e)

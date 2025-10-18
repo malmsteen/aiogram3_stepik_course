@@ -58,10 +58,15 @@ sections = [
     "Задачи по теории чисел",    
 ]
 
+all = "Все типы задач"
+gen_variant = "Сгенерировать вариант"
+
 def create_sections_keyboard() -> InlineKeyboardMarkup:    
     buttons = [InlineKeyboardButton(text=text, callback_data=str(data+1)) for data, text in enumerate(sections)]
-    all_btn = InlineKeyboardButton(text="Все типы задач", callback_data = str(len(sections) + 1))
-    buttons.append(all_btn)
+    all_btn = InlineKeyboardButton(text=all, callback_data = str(len(sections) + 1))
+    gen_btn = InlineKeyboardButton(text=gen_variant, callback_data = str(len(sections) + 2))
+
+    buttons.extend([all_btn, gen_btn])
     kb_builder = InlineKeyboardBuilder()
     
 

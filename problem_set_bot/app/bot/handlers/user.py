@@ -13,7 +13,7 @@ from app.bot.filters.filters import IsDigitCallbackData, HexIdsInMessage, FloatA
 from app.bot.keyboards.menu_button import get_main_menu_commands
 from app.bot.keyboards.keyboards import create_sections_keyboard, answer_keyboard
 from app.bot.states.states import LangSG
-from app.infrastructure.latex.latex import make_pdf, make_pdf_all, make_problems_pdf
+from app.infrastructure.latex.latex import make_pdf, make_pdf_all, make_problems_pdf, make_variant
 from app.infrastructure.latex.util import remove_user_files
 
 
@@ -25,7 +25,8 @@ from app.infrastructure.database.db import (
     get_problem_texts,
     get_all_problem_types,
     get_problems_by_ids,
-    add_problem_answer
+    add_problem_answer,
+    get_variant
 )
 from psycopg.connection_async import AsyncConnection
 
@@ -121,11 +122,16 @@ async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, 
         text=i18n.get("compiling"),
         reply_markup=create_sections_keyboard())
     
-           
-    problems = await get_problem_texts(conn, num)
-    pdf_doc = await make_pdf(problems, texlive) 
-    
-       
+    if int(num) <= 19: 
+        problems = await get_problem_texts(conn, num)
+        pdf_doc = await make_pdf(problems, texlive)
+    elif int(num) == 20:
+        problems = await get_all_problem_types(conn)
+        pdf_doc = await make_pdf_all(problems, texlive)  
+    else:
+        problems = await get_variant(conn)
+        pdf_doc = await make_variant(problems, texlive)
+
     # await message.answer()
     await callback.message.edit_text(
         text=i18n.get('compilation_done'),
@@ -136,6 +142,15 @@ async def process_section_press(callback: CallbackQuery, conn: AsyncConnection, 
         # text=num,
         # reply_markup=callback.message.reply_markup
     )
+
+@user_router.callback_query(IsDigitCallbackData())
+async def process_genenerate_press(callback: CallbackQuery, conn: AsyncConnection, texlive, i18n: dict[str, str]):
+    num = callback.data
+    await callback.answer()
+
+    await callback.message.edit_text(
+        text=i18n.get("compiling"),
+        reply_markup=create_sections_keyboard())
 
 @user_router.message(Command(commands="problems"), HexIdsInMessage())
 async def process_problems_command(message: Message, source_ids: list[str], conn: AsyncConnection, i18n, texlive):
