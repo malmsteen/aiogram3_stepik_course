@@ -3,7 +3,7 @@ import logging
 import subprocess
 import os
 import regex as re
-from app.infrastructure.latex.util import footer, header
+from app.infrastructure.latex.util import footer, header, postface
 from aiogram.types.input_file import FSInputFile
 import requests
 
@@ -101,7 +101,7 @@ async def make_pdf(probs, texlive):
         href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
-    tex_content += footer
+    tex_content += postface + '\n'+ footer
     texfile = f'{sections[pos]}.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
@@ -152,7 +152,7 @@ async def make_pdf_all(probs, texlive):
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{problem['text']}{fig}}}\n\\end{{problem}}'
 
 
-    tex_content += footer
+    tex_content += postface + '\n'+ footer
     texfile = f'Все типы задач ФИПИ.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
@@ -186,7 +186,7 @@ async def make_variant(probs, texlive):
         href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
-    tex_content += footer
+    tex_content += postface + '\n'+ footer
     texfile = f'{title}.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
@@ -219,8 +219,8 @@ async def make_problems_pdf(problems, user_id, texlive):
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
         href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
-
-    tex_content += footer
+    
+    tex_content += '\end{multicols}\n' + footer
     texfile = f'{title + str(user_id)}.tex'
     texpath = f'pdf/{texfile}'
     pdfpath = texpath.replace('tex','pdf')

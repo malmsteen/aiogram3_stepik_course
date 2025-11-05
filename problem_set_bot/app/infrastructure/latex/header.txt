@@ -131,7 +131,7 @@ heightrounded
 
 %-------------------- Форматирование колонтитулов --------------------
 \pagestyle{fancy}
-\rhead{\small{\href{https://repetit-fm.ru}{repetit-fm.ru}}}
+%\rhead{\small{\href{https://repetit-fm.ru}{repetit-fm.ru}}}
 %	\lhead{\uppercase{\small\textsl{Колебания и волны}}}
 %	\chead{\uppercase{\small{Лето, 2023}}}
 \rfoot{\fontspec{Pecita}{Евгений Филипенко}}
