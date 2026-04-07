@@ -73,7 +73,18 @@ async def main():
                             );
                         """
                     )
-                logger.info("Tables `users`, `activity`, `answers` were successfully created")
+                    await cursor.execute(
+                        query="""
+                            CREATE TABLE IF NOT EXISTS broadcast_log (
+                                id SERIAL PRIMARY KEY,
+                                user_id BIGINT NOT NULL,
+                                sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                            );
+                        """
+                    )
+                logger.info(
+                    "Tables `users`, `activity`, `answers` were successfully created"
+                )
     except Error as db_error:
         logger.exception("Database-specific error: %s", db_error)
     except Exception as e:
