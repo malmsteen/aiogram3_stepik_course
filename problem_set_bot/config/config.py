@@ -2,6 +2,7 @@ import logging
 import os
 from dataclasses import dataclass
 
+
 from environs import Env
 
 logger = logging.getLogger(__name__)
@@ -36,12 +37,18 @@ class LoggSettings:
     level: str
     format: str
 
+
 @dataclass
 class TexliveSettings:
     host: str
     port: int
     fipiurl: str
 
+
+@dataclass
+class ProxySettings:
+    url: str  # например, "socks5://user:pass@ip:port"
+    enabled: bool
 
 
 @dataclass
@@ -51,6 +58,7 @@ class Config:
     redis: RedisSettings
     log: LoggSettings
     tex: TexliveSettings
+    proxy: ProxySettings
 
 
 def load_config(path: str | None = None) -> Config:
@@ -75,7 +83,7 @@ def load_config(path: str | None = None) -> Config:
         admin_ids = [int(x) for x in raw_ids]
     except ValueError as e:
         raise ValueError(f"ADMIN_IDS must be integers, got: {raw_ids}") from e
-    
+
     db = DatabaseSettings(
         name=env("POSTGRES_DB"),
         host=env("POSTGRES_HOST"),
@@ -92,25 +100,26 @@ def load_config(path: str | None = None) -> Config:
         username=env("REDIS_USERNAME", default=""),
     )
 
-    logg_settings = LoggSettings(
-        level=env("LOG_LEVEL"),
-        format=env("LOG_FORMAT")
-    )
+    logg_settings = LoggSettings(level=env("LOG_LEVEL"), format=env("LOG_FORMAT"))
 
     logger.info("Configuration loaded successfully")
 
     tex = TexliveSettings(
-        host=env("TEXLIVE_HOST"),
-        port=env("TEXLIVE_PORT"),
-        fipiurl=env("HREF_PREF")
+        host=env("TEXLIVE_HOST"), port=env("TEXLIVE_PORT"), fipiurl=env("HREF_PREF")
     )
 
+    proxy_enabled = env.bool("PROXY_ENABLED", default=False)
+    proxy_url = env("PROXY_URL", default="")
+    if proxy_enabled and not proxy_url:
+        raise ValueError("PROXY_URL must be set when PROXY_ENABLED=True")
 
-    
+    proxy = ProxySettings(enabled=proxy_enabled, url=proxy_url)
+
     return Config(
         bot=BotSettings(token=token, admin_ids=admin_ids),
         db=db,
         redis=redis,
         log=logg_settings,
-        tex=tex
+        tex=tex,
+        proxy=proxy,
     )

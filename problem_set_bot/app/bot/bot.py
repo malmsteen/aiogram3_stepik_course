@@ -19,6 +19,10 @@ from app.infrastructure.database.connection import get_pg_pool
 from config.config import Config
 from redis.asyncio import Redis
 
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiohttp import ClientSession
+from aiohttp_socks import ProxyConnector
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +41,20 @@ async def main(config: Config) -> None:
         )
     )
 
+    if config.proxy.enabled:
+        if config.proxy.url.startswith("socks"):
+            connector = ProxyConnector.from_url(config.proxy.url)
+            session = AiohttpSession(connector=connector)
+        else:
+            # HTTP/HTTPS прокси
+            session = AiohttpSession(proxy=config.proxy.url)
+    else:
+        session = AiohttpSession()
+
     # Инициализируем бот и диспетчер
     bot = Bot(
         token=config.bot.token,
+        session=session,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=storage)
@@ -57,10 +72,9 @@ async def main(config: Config) -> None:
     translations = get_translations()
     # формируем список локалей из ключей словаря с переводами
     # locales = list(translations.keys())
-    locales = ['ru']
+    locales = ["ru"]
 
     texlive = config.tex
-    
 
     # Подключаем роутеры в нужном порядке
     logger.info("Including routers...")
@@ -77,11 +91,12 @@ async def main(config: Config) -> None:
     # Запускаем поллинг
     try:
         await dp.start_polling(
-            bot, db_pool=db_pool, 
-            translations=translations, 
-            locales=locales, 
+            bot,
+            db_pool=db_pool,
+            translations=translations,
+            locales=locales,
             admin_ids=config.bot.admin_ids,
-            texlive=texlive        
+            texlive=texlive,
         )
     except Exception as e:
         logger.exception(e)
