@@ -98,7 +98,7 @@ async def make_pdf(probs, texlive):
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
-        href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
+        href = f"\\myhref{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
     tex_content += postface + '\n'+ footer
@@ -148,7 +148,7 @@ async def make_pdf_all(probs, texlive):
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', problem['text'])    
-        href = f"\\href{{{HREF_PREF + problem['source_id']}}}{{{problem['source_id']}}}"
+        href = f"\\myhref{{{HREF_PREF + problem['source_id']}}}{{{problem['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{problem['text']}{fig}}}\n\\end{{problem}}'
 
 
@@ -183,10 +183,11 @@ async def make_variant(probs, texlive):
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
-        href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
+        href = f"\\myhref{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
     tex_content += postface + '\n'+ footer
+    print(tex_content)
     texfile = f'{title}.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
@@ -217,7 +218,7 @@ async def make_problems_pdf(problems, user_id, texlive):
             fig = ""
 
         text = re.sub('([-+=]+)', r'\\hm{\1}', prob['text'])    
-        href = f"\\href{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
+        href = f"\\myhref{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
     
     tex_content += '\end{multicols}\n' + footer

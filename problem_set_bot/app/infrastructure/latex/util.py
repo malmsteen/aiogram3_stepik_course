@@ -122,6 +122,7 @@ heightrounded
 \definecolor{violet}{HTML}{800080} % цвет гиперссылок
 \hypersetup{linkcolor=myblue	,citecolor=darkred, urlcolor = myblue, colorlinks=true}
 \hypersetup{pdfhighlight=/P}
+\newcommand{\myhref}[2]{\href{#1}{\ttfamily #2}}
 \usepackage[all]{hypcap}
 %--------------------------------------------------------------------
 
@@ -141,7 +142,7 @@ heightrounded
 	%\hspace*{7mm}
 	\href{https://vk.com/club222480852}{\resizebox{!}{4mm}{\color{vkblue} \faIcon{vk}}}
 	\hspace*{7mm}
-	\href{https://t.me/math_and_beyond}{\resizebox{!}{4.5mm}{\color{myblue} \faIcon{telegram}}} @math\_and\_beyond
+	\href{https://t.me/math_and_beyond}{\resizebox{!}{4.5mm}{\color{myblue} \faIcon{telegram}} \color{darkgray} \texttt{@math\_and\_beyond}} 
 } % Requires
 \cfoot{\thepage}
 \setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt}
@@ -216,7 +217,7 @@ heightrounded
 """
 
 postface = r"""
-
+\end{multicols}
 \newpage
 \section*{Послесловие}
 Этот файл — часть большого проекта. У нас есть вся база ФИПИ по профильной математике - \textbf{978 отсортированных по темам задач}, файлы по ЕГЭ бесплатны. Для этого нужно вступить в телеграм-канал или в группу
@@ -260,7 +261,7 @@ footer = r"""
 """
 
 
-async def remove_user_files(user_id, wordir='pdf'):
+async def remove_user_files(user_id, wordir="pdf"):
     tempfiles = [f for f in os.listdir(wordir) if str(user_id) in f]
     for f in tempfiles:
-        os.remove(os.path.join('pdf', f))
+        os.remove(os.path.join("pdf", f))
