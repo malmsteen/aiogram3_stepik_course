@@ -34,7 +34,7 @@ async def add_user(
             params={
                 "user_id": user_id,
                 "username": username,
-                "language": 'ru',
+                "language": "ru",
                 "role": role,
                 "is_alive": is_alive,
                 "banned": banned,
@@ -92,7 +92,7 @@ async def change_user_alive_status(
                 SET is_alive = %s
                 WHERE user_id = %s;
             """,
-            params=(is_alive, user_id)
+            params=(is_alive, user_id),
         )
     logger.info("Updated `is_alive` status to `%s` for user %d", is_alive, user_id)
 
@@ -109,8 +109,8 @@ async def change_user_banned_status_by_id(
                 UPDATE users
                 SET banned = %s
                 WHERE user_id = %s
-            """, 
-            params=(banned, user_id)
+            """,
+            params=(banned, user_id),
         )
     logger.info("Updated `banned` status to `%s` for user %d", banned, user_id)
 
@@ -127,8 +127,8 @@ async def change_user_banned_status_by_username(
                 UPDATE users
                 SET banned = %s
                 WHERE username = %s
-            """, 
-            params=(banned, username)
+            """,
+            params=(banned, username),
         )
     logger.info("Updated `banned` status to `%s` for user %d", banned, username)
 
@@ -145,8 +145,8 @@ async def update_user_lang(
                 UPDATE users
                 SET language = %s
                 WHERE user_id = %s
-            """, 
-            params=(language, user_id)
+            """,
+            params=(language, user_id),
         )
     logger.info("The language `%s` is set for the user `%s`", language, user_id)
 
@@ -167,7 +167,10 @@ async def get_user_lang(
     if row:
         logger.info("The user with `user_id`=%s has the language %s", user_id, row)
     else:
-        logger.warning("No user with `user_id`=%s found in the database, or language is not set", user_id)
+        logger.warning(
+            "No user with `user_id`=%s found in the database, or language is not set",
+            user_id,
+        )
     return row[0] if row else None
 
 
@@ -185,7 +188,9 @@ async def get_user_alive_status(
         )
         row = await data.fetchone()
     if row:
-        logger.info("The user with `user_id`=%s has the is_alive status is %s", user_id, row[0])
+        logger.info(
+            "The user with `user_id`=%s has the is_alive status is %s", user_id, row[0]
+        )
     else:
         logger.warning("No user with `user_id`=%s found in the database", user_id)
     return row[0] if row else None
@@ -205,7 +210,9 @@ async def get_user_banned_status_by_id(
         )
         row = await data.fetchone()
     if row:
-        logger.info("The user with `user_id`=%s has the banned status is %s", user_id, row[0])
+        logger.info(
+            "The user with `user_id`=%s has the banned status is %s", user_id, row[0]
+        )
     else:
         logger.warning("No user with `user_id`=%s found in the database", user_id)
     return row[0] if row else None
@@ -225,7 +232,9 @@ async def get_user_banned_status_by_username(
         )
         row = await data.fetchone()
     if row:
-        logger.info("The user with `username`=%s has the banned status is %s", username, row[0])
+        logger.info(
+            "The user with `username`=%s has the banned status is %s", username, row[0]
+        )
     else:
         logger.warning("No user with `username`=%s found in the database", username)
     return row[0] if row else None
@@ -286,10 +295,7 @@ async def get_statistics(conn: AsyncConnection) -> tuple[Any, ...] | None:
     return [*rows] if rows else None
 
 
-async def get_problem_texts(
-        conn: AsyncConnection,
-        num: int
-) -> list[dict]:
+async def get_problem_texts(conn: AsyncConnection, num: int) -> list[dict]:
     async with conn.cursor() as cursor:
         limit = 100
         data = await cursor.execute(
@@ -299,23 +305,21 @@ async def get_problem_texts(
                 WHERE position=%s
                 LIMIT {limit};              
             """,
-            params=(num,)
+            params=(num,),
         )
         rows = await data.fetchall()
     logger.info(f"Got {limit} problems by position {num}")
     out = []
     for r in rows:
-        out.append({"text":r[0], "source_id":r[1], "position":r[2]})
+        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
     return out
 
 
-async def get_all_problem_types(
-        conn: AsyncConnection
-        ) -> list[dict]:
+async def get_all_problem_types(conn: AsyncConnection) -> list[dict]:
     limit = 10000
     rows = []
-    for i in range(1,20):
-        async with conn.cursor() as cursor:            
+    for i in range(1, 20):
+        async with conn.cursor() as cursor:
             data = await cursor.execute(
                 query=f"""
                     SELECT text, source_id, position
@@ -323,21 +327,21 @@ async def get_all_problem_types(
                     WHERE position=%s
                     LIMIT {limit};              
                 """,
-                params=(i,)
+                params=(i,),
             )
-            rows.extend(await data.fetchall())    
-    logger.info(f"Got problems, {limit} of each type")   
+            rows.extend(await data.fetchall())
+    logger.info(f"Got problems, {limit} of each type")
     out = []
     for r in rows:
-        out.append({"text":r[0], "source_id":r[1], "position":r[2]})    
+        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
     return out
 
 
 async def get_variant(
-        conn: AsyncConnection,        
-        ) -> list[dict]:
+    conn: AsyncConnection,
+) -> list[dict]:
     rows = []
-    async with conn.cursor() as cursor:       
+    async with conn.cursor() as cursor:
         data = await cursor.execute(
             query="""
                 SELECT DISTINCT ON (position) 
@@ -351,40 +355,33 @@ async def get_variant(
     logger.info(f"Got {len(rows)} problems for variant")
     out = []
     for r in rows:
-        out.append({"text":r[0], "source_id":r[1]})
+        out.append({"text": r[0], "source_id": r[1]})
     return out
 
 
-async def get_problems_by_ids(
-        conn: AsyncConnection,
-        ids: list
-        ) -> list[dict]:
+async def get_problems_by_ids(conn: AsyncConnection, ids: list) -> list[dict]:
     rows = []
     for id in ids:
-        async with conn.cursor() as cursor:            
+        async with conn.cursor() as cursor:
             data = await cursor.execute(
                 query=f"""
                     SELECT text, source_id, position
                     FROM problems
                     WHERE source_id LIKE %s                    ;              
                 """,
-                params=(f"{id}%".upper(),)
+                params=(f"{id}%".upper(),),
             )
-            rows.extend(await data.fetchall())    
+            rows.extend(await data.fetchall())
     logger.info(f"Got problem with ids {ids}")
     out = []
     for r in rows:
-        out.append({"text":r[0], "source_id":r[1], "position":r[2]})
+        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
     return out
 
 
 async def add_problem_answer(
-        conn: AsyncConnection,
-        source_id,
-        user_id,        
-        answer,
-        problem_type
-        ):
+    conn: AsyncConnection, source_id, user_id, answer, problem_type
+):
     async with conn.cursor() as cursor:
         await cursor.execute(
             query="""
@@ -392,14 +389,26 @@ async def add_problem_answer(
                 VALUES(%s, %s, %s, %s)
                 ON CONFLICT DO NOTHING;
             """,
-            params=(source_id.upper(), user_id, answer, problem_type)
+            params=(source_id.upper(), user_id, answer, problem_type),
         )
     logger.info(
         "Answer added. Table=`%s`, source_id=`%s`, user_id=%d, created_at=`%s`, answer=`%s` type=`%s`",
         "answers",
         source_id,
-        user_id,        
+        user_id,
         datetime.now(timezone.utc),
         answer,
-        problem_type      
+        problem_type,
     )
+
+
+async def get_all_alive_users(conn: AsyncConnection):
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT user_id FROM users WHERE is_alive = true")
+        rows = await cur.fetchall()
+    return [row[0] for row in rows]
+
+
+async def broadcast_log(conn: AsyncConnection, user_id: int):
+    async with conn.cursor() as cur:
+        await cur.execute("INSERT INTO broadcast_log (user_id) VALUES (%s)", (user_id,))
