@@ -23,6 +23,8 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiohttp import ClientSession
 from aiohttp_socks import ProxyConnector
 
+import asyncio
+from app.webapp import run_webapp
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,14 @@ async def main(config: Config) -> None:
         port=config.db.port,
         user=config.db.user,
         password=config.db.password,
+    )
+
+    asyncio.create_task(
+        run_webapp(
+            host="0.0.0.0",
+            port=8080,
+            db_pool=db_pool,
+        )
     )
 
     # Получаем словарь с переводами
