@@ -10,21 +10,16 @@ logger = logging.getLogger(__name__)
 @aiohttp_jinja2.template("tasks.html")
 async def tasks_page(request: web.Request):
     """
-    GET /tasks/{position}?user_id=12345
+    GET /tasks/{position}
     """
     conn = request["conn"]
     position = int(request.match_info.get("position", 13))
-    user_id = int(request.query.get("user_id", 0))
-
-    if user_id == 0:
-        raise web.HTTPBadRequest(text="Missing user_id")
 
     tasks = await get_problem_texts(conn, position)
 
     # Шаблон получит эти переменные
     return {
         "position": position,
-        "user_id": user_id,
         "tasks": tasks,
     }
 

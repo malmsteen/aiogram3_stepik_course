@@ -67,10 +67,35 @@ gen_variant = "Сгенерировать вариант"
 
 
 def sections_keyboard() -> InlineKeyboardMarkup:
+
     buttons = [
         InlineKeyboardButton(text=text, callback_data=str(data + 1))
         for data, text in enumerate(sections)
     ]
+
+    all_btn = InlineKeyboardButton(text=all, callback_data=str(len(sections) + 1))
+    gen_btn = InlineKeyboardButton(
+        text=gen_variant, callback_data=str(len(sections) + 2)
+    )
+
+    buttons.extend([all_btn, gen_btn])
+    kb_builder = InlineKeyboardBuilder()
+
+    # Распаковываем список с кнопками в билдер методом `row`
+    kb_builder.row(*buttons, width=2)
+    return kb_builder.as_markup()
+
+
+def web_sections_keyboard(webapp_url: str = None) -> InlineKeyboardMarkup:
+
+    buttons = [
+        InlineKeyboardButton(
+            text=text,
+            web_app=WebAppInfo(url=f"{webapp_url}/{data + 1}"),
+        )
+        for data, text in enumerate(sections)
+    ]
+
     all_btn = InlineKeyboardButton(text=all, callback_data=str(len(sections) + 1))
     gen_btn = InlineKeyboardButton(
         text=gen_variant, callback_data=str(len(sections) + 2)

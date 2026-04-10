@@ -1,6 +1,7 @@
 import logging
 from contextlib import suppress
 import os
+import json
 
 from aiogram import Bot, Router, F
 from aiogram.enums import BotCommandScopeType
@@ -13,6 +14,7 @@ from app.bot.filters.filters import IsDigitCallbackData, HexIdsInMessage, FloatA
 from app.bot.keyboards.menu_button import get_main_menu_commands
 from app.bot.keyboards.keyboards import (
     sections_keyboard,
+    web_sections_keyboard,
     webapp_keyboard,
     answer_keyboard,
 )
@@ -251,21 +253,40 @@ async def process_text_ans(
     logger.debug(f"Ваш ответ {float_num} к задаче {source_ids[0]}. Отправлен")
 
 
+# @user_router.message(Command("tasks"))
+# async def cmd_tasks(message: Message):
+#     # Адрес, который выдала Tuna (возьмите из логов или tuna.log)
+
+#     BASE_URL = "https://4dhjz4-37-113-214-206.ru.tuna.am/tasks"
+
+#     position = 13  # номер темы (позиции) - можно сделать динамическим
+#     user_id = message.from_user.id
+
+#     # Формируем полный URL
+#     webapp_url = f"{BASE_URL}/{position}"
+
+#     # Создаём кнопку с WebApp
+
+#     await message.answer(
+#         "Нажмите кнопку ниже, чтобы открыть список задач и выбрать нужные для печати:",
+#         reply_markup=web_sections_keyboard(webapp_url=webapp_url),
+#         # reply_markup=webapp_keyboard(webapp_url=webapp_url),
+#     )
+
+
 @user_router.message(Command("tasks"))
 async def cmd_tasks(message: Message):
-    # Адрес, который выдала Tuna (возьмите из логов или tuna.log)
-
-    BASE_URL = "https://ff00to-37-113-214-206.ru.tuna.am"
-
-    position = 13  # номер темы (позиции) - можно сделать динамическим
     user_id = message.from_user.id
+    base_url = "https://ga2eb0-37-113-214-206.ru.tuna.am/tasks"
 
-    # Формируем полный URL
-    webapp_url = f"{BASE_URL}/tasks/{position}?user_id={user_id}"
+    keyboard = web_sections_keyboard(base_url)
+    await message.answer("Выберите тему:", reply_markup=keyboard)
 
-    # Создаём кнопку с WebApp
 
-    await message.answer(
-        "Нажмите кнопку ниже, чтобы открыть список задач и выбрать нужные для печати:",
-        reply_markup=webapp_keyboard(webapp_url=webapp_url),
-    )
+@user_router.message(F.web_app_data)
+async def handle_webapp_data(message: Message, conn):
+    data = json.loads(message.web_app_data.data)
+    position = data.get("position")
+    task_ids = data.get("task_ids")
+    # Обработка выбранных задач
+    await message.answer(f"Выбрано {len(task_ids)} задач из темы {position}")
