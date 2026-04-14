@@ -295,6 +295,36 @@ async def get_statistics(conn: AsyncConnection) -> tuple[Any, ...] | None:
     return [*rows] if rows else None
 
 
+async def get_problem_ids_by_position(conn: AsyncConnection, num: int) -> list[dict]:
+    async with conn.cursor() as cursor:
+        limit = 100
+        data = await cursor.execute(
+            query=f"""
+                SELECT source_id
+                FROM problems
+                WHERE position=%s
+                LIMIT {limit};              
+            """,
+            params=(num,),
+        )
+        rows = await data.fetchall()
+    logger.info(f"Got {limit} problems by position {num}")
+    out = []
+    for r in rows:
+        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
+    return out
+
+
+async def webapp_get_problem_ids_by_position(conn, position: int) -> list[str]:
+    """Возвращает список source_id задач для указанной позиции (используется WebApp)."""
+    async with conn.cursor() as cursor:
+        await cursor.execute(
+            "SELECT source_id FROM problems WHERE position = %s", (position,)
+        )
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]
+
+
 async def get_problem_texts(conn: AsyncConnection, num: int) -> list[dict]:
     async with conn.cursor() as cursor:
         limit = 100

@@ -32,16 +32,18 @@ logger = logging.getLogger(__name__)
 # Функция конфигурирования и запуска бота
 async def main(config: Config) -> None:
     logger.info("Starting bot...")
-    # Инициализируем хранилище
-    storage = RedisStorage(
-        redis=Redis(
-            host=config.redis.host,
-            port=config.redis.port,
-            db=config.redis.db,
-            password=config.redis.password,
-            username=config.redis.username,
-        )
+    # 1. Создаем клиент отдельно
+    redis_client = Redis(
+        host=config.redis.host,
+        port=config.redis.port,
+        db=config.redis.db,
+        password=config.redis.password,
+        username=config.redis.username,
+        decode_responses=True,  # Важно для работы с текстом/JSON
     )
+
+    # 2. Передаем его в хранилище FSM
+    storage = RedisStorage(redis=redis_client)
 
     if config.proxy.enabled:
         if config.proxy.url.startswith("socks"):
@@ -72,9 +74,7 @@ async def main(config: Config) -> None:
 
     asyncio.create_task(
         run_webapp(
-            host="0.0.0.0",
-            port=8080,
-            db_pool=db_pool,
+            host="0.0.0.0", port=8080, db_pool=db_pool, redis_client=redis_client
         )
     )
 
@@ -107,6 +107,8 @@ async def main(config: Config) -> None:
             locales=locales,
             admin_ids=config.bot.admin_ids,
             texlive=texlive,
+            storage=storage,
+            redis=redis_client,
         )
     except Exception as e:
         logger.exception(e)

@@ -7,3 +7,8 @@ class LangSG(StatesGroup):
 
 class BroadcastState(StatesGroup):
     waiting_for_content = State()
+
+
+class TaskSelectionSG(StatesGroup):
+    selecting = State()
+    selected_tasks = State()

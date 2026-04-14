@@ -2,6 +2,7 @@ import logging
 from contextlib import suppress
 import os
 import json
+from app.bot.states.states import TaskSelectionSG
 
 from aiogram import Bot, Router, F
 from aiogram.enums import BotCommandScopeType
@@ -17,6 +18,8 @@ from app.bot.keyboards.keyboards import (
     web_sections_keyboard,
     webapp_keyboard,
     answer_keyboard,
+    cart_management_keyboard,
+    test_keyboard,
 )
 from app.bot.states.states import LangSG
 from app.infrastructure.latex.latex import (
@@ -36,10 +39,12 @@ from app.infrastructure.database.db import (
     get_problem_texts,
     get_all_problem_types,
     get_problems_by_ids,
+    get_problem_ids_by_position,
     add_problem_answer,
     get_variant,
 )
 from psycopg.connection_async import AsyncConnection
+from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
@@ -273,20 +278,181 @@ async def process_text_ans(
 #         # reply_markup=webapp_keyboard(webapp_url=webapp_url),
 #     )
 
+BASE_URL = "https://vs7yfk-37-113-214-170.ru.tuna.am"
+TASKS_URL = f"{BASE_URL}/tasks"
+CART_URL = f"{BASE_URL}/cart"
 
-@user_router.message(Command("tasks"))
-async def cmd_tasks(message: Message):
+
+@user_router.message(Command("choose"))
+async def cmd_tasks(message: Message, redis: Redis):
+    if not redis:
+        await message.answer("Ошибка: Redis не доступен")
+        return
+
     user_id = message.from_user.id
-    base_url = "https://ga2eb0-37-113-214-206.ru.tuna.am/tasks"
+    cart_json = await redis.get(f"cart:{user_id}")
+    cart = json.loads(cart_json) if cart_json else []
 
-    keyboard = web_sections_keyboard(base_url)
-    await message.answer("Выберите тему:", reply_markup=keyboard)
+    keyboard = web_sections_keyboard(base_url=TASKS_URL, cart=cart)
+
+    await message.answer(
+        "📚 Выберите тему, чтобы добавить задачи в корзину.\n"
+        "Уже выбранные задачи будут отмечены галочками.\n\n",
+        reply_markup=keyboard,
+    )
+
+
+@user_router.message(Command("cart"))
+async def cmd_cart(message: Message, redis: Redis):
+    user_id = message.from_user.id
+    cart_json = await redis.get(f"cart:{user_id}")
+    cart = json.loads(cart_json) if cart_json else []
+    size = len(cart)
+
+    if size == 0:
+        await message.answer("📭 Корзина пуста. Используйте /choose для выбора задач.")
+        return
+
+    keyboard = cart_management_keyboard(
+        cart_size=size, base_cart_url=CART_URL, cart=cart
+    )
+    await message.answer(
+        f"📦 В корзине {size} задач.\n"
+        "Вы можете отредактировать список (снять/отметить задачи) или сразу отправить на печать.",
+        reply_markup=keyboard,
+    )
+
+
+@user_router.callback_query(F.data == "print_cart")
+async def print_cart_callback(
+    callback: CallbackQuery,
+    redis: Redis,
+    conn: AsyncConnection,
+    texlive,
+    i18n: dict,
+):
+    user_id = callback.from_user.id
+    cart_json = await redis.get(f"cart:{user_id}")
+    cart = json.loads(cart_json) if cart_json else []
+
+    if not cart:
+        await callback.answer("Корзина пуста", show_alert=True)
+        return
+    keyboard = cart_management_keyboard(
+        cart_size=len(cart), base_cart_url=CART_URL, cart=cart
+    )
+
+    # await message.answer()
+    await callback.message.edit_text(
+        text=i18n.get("compiling"),
+        reply_markup=keyboard,
+        show_alert=False,
+    )
+    problems = await get_problems_by_ids(conn, cart)
+    pdf_doc = await make_problems_pdf(problems, user_id, texlive)
+
+    await callback.message.edit_text(
+        text=i18n.get("compilation_done"),
+        reply_markup=keyboard,
+        show_alert=False,
+    )
+    await callback.message.answer_document(document=pdf_doc)
+
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "clear_cart")
+async def clear_cart_callback(callback: CallbackQuery, redis: Redis):
+    user_id = callback.from_user.id
+    await redis.delete(f"cart:{user_id}")
+    await callback.answer("Корзина очищена", show_alert=True)
+    # Можно также отредактировать сообщение или отправить новое
+    await callback.message.edit_text(
+        "🗑️ Корзина очищена. Используйте /choose для выбора задач."
+    )
 
 
 @user_router.message(F.web_app_data)
-async def handle_webapp_data(message: Message, conn):
+async def handle_webapp_data(message: Message, redis: Redis, conn: AsyncConnection):
+    logger.info(f"Получены данные: {message.web_app_data.data}")
     data = json.loads(message.web_app_data.data)
-    position = data.get("position")
-    task_ids = data.get("task_ids")
-    # Обработка выбранных задач
-    await message.answer(f"Выбрано {len(task_ids)} задач из темы {position}")
+    logger.info(f"Разобранные данные: {data}")
+    task_ids = data.get("task_ids", [])
+    position = data.get(
+        "position"
+    )  # будет только для /tasks/{position}, для /cart — None
+
+    user_id = message.from_user.id
+    cart_key = f"cart:{user_id}"
+    cart_json = await redis.get(cart_key)
+    current_cart = set(json.loads(cart_json)) if cart_json else set()
+
+    if position:
+        # Режим: добавление/удаление задач из конкретной темы
+        tasks_in_topic = await get_problem_ids_by_position(conn, position)
+        topic_ids = {task["source_id"] for task in tasks_in_topic}
+
+        current_cart -= topic_ids
+        current_cart.update(task_ids)
+        new_cart = list(current_cart)
+        await redis.set(cart_key, json.dumps(new_cart), ex=604800)  # 7 дней
+        await message.answer(f"📦 Теперь в корзине {len(new_cart)} задач.")
+    else:
+        # Режим: полная замена корзины (из /cart)
+        await redis.set(cart_key, json.dumps(task_ids), ex=604800)
+        await message.answer(f"✅ Корзина обновлена.\n📦 Теперь {len(task_ids)} задач.")
+
+
+@user_router.message(F.web_app_data)
+async def handle_webapp_data(
+    message: Message, state: FSMContext, conn: AsyncConnection
+):
+    logger.info(f"📩 Получены данные из WebApp: {message.web_app_data.data}")
+    await message.answer("✅ Данные получены!")
+
+
+@user_router.message(Command("done"))
+async def compile_selected_tasks(
+    message: Message, state: FSMContext, conn: AsyncConnection, texlive
+):
+    user_data = await state.get_data()
+    selected_tasks = user_data.get("selected_tasks", [])
+
+    if not selected_tasks:
+        await message.answer("❌ Корзина пуста. Используйте /choose для выбора задач.")
+        return
+
+    await message.answer(f"📦 Начинаю компиляцию {len(selected_tasks)} задач...")
+
+    problems = await get_problems_by_ids(conn, selected_tasks)
+    pdf_doc = await make_problems_pdf(problems, message.from_user.id, texlive)
+
+    await message.answer_document(document=pdf_doc, caption="✅ Ваш PDF готов!")
+
+    await state.update_data(selected_tasks=[])
+    await state.clear()
+
+
+@user_router.message(Command("selected"))
+async def show_selected(message: Message, state: FSMContext):
+    user_data = await state.get_data()
+    selected_tasks = user_data.get("selected_tasks", [])
+
+    if not selected_tasks:
+        await message.answer("📭 Корзина пуста. Используйте /choose для выбора.")
+        return
+
+    tasks_preview = "\n".join(selected_tasks[:20])
+    await message.answer(
+        f"📦 Выбрано задач: {len(selected_tasks)}\n"
+        f"ID задач:\n{tasks_preview}" + ("\n..." if len(selected_tasks) > 20 else "")
+    )
+
+
+@user_router.message(Command("test"))
+async def cmd_test(message: Message):
+    # Базовый URL без /tasks (корневой)
+    # замените на ваш домен
+    test_url = f"{BASE_URL}/test"
+    keyboard = test_keyboard(url=test_url)
+    await message.answer("Нажмите кнопку для теста:", reply_markup=keyboard)

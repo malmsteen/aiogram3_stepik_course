@@ -2,68 +2,272 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
-        font-family: system-ui;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
         padding: 12px;
+        margin: 0;
         background: var(--tg-theme-bg-color);
         color: var(--tg-theme-text-color);
       }
-      .task {
+      h3 {
+        margin-top: 0;
         margin-bottom: 16px;
-        padding: 8px;
-        border-bottom: 1px solid var(--tg-theme-hint-color);
+        font-size: 20px;
+        font-weight: 600;
       }
-      button {
-        background: var(--tg-theme-button-color);
-        color: var(--tg-theme-button-text-color);
-        border: none;
+      .task {
+        margin-bottom: 12px;
         padding: 10px;
+        background: var(--tg-theme-secondary-bg-color);
         border-radius: 8px;
-        width: 100%;
-        margin-top: 16px;
+        transition: background 0.2s;
+      }
+      .task-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
       }
       .checkbox {
-        margin-right: 8px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        accent-color: var(--tg-theme-button-color);
+        cursor: pointer;
+      }
+      .task-text {
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--tg-theme-text-color);
+      }
+      button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        background: var(--tg-theme-button-color);
+        color: var(--tg-theme-button-text-color);
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      button:active {
+        opacity: 0.7;
+      }
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--tg-theme-hint-color);
       }
     </style>
   </head>
   <body>
-    <h3>Задачи по теме {{ position }}</h3>
-    <div id="tasks">
+    <h3>{{ title }}</h3>
+    <div
+      style="
+        position: sticky;
+        top: 0;
+        background: var(--tg-theme-bg-color);
+        padding: 8px 0;
+        z-index: 100;
+      "
+    >
+      <button id="save-btn">✖️ Закрыть</button>
+    </div>
+    <div id="tasks-container">
       {% for task in tasks %}
       <div class="task">
-        <input
-          type="checkbox"
-          class="checkbox"
-          data-id="{{ task.source_id }}"
-          id="task_{{ task.source_id }}"
-        />
-        <label for="task_{{ task.source_id }}">{{ task.text[:150] }}...</label>
+        <label class="task-label">
+          <input
+            type="checkbox"
+            class="checkbox"
+            data-id="{{ task.source_id }}"
+            {%
+            if
+            task.checked
+            %}checked{%
+            endif
+            %}
+          />
+          <span class="task-text"
+            >{{ task.text[:150] }}{% if task.text|length > 150 %}...{% endif
+            %}</span
+          >
+        </label>
       </div>
       {% endfor %}
     </div>
-    <button onclick="sendSelected()">
-      Отправить выбранные задачи на печать
-    </button>
+
+    <div class="footer">Отметьте нужные задачи и нажмите «Сохранить».</div>
+
     <script>
       let tg = window.Telegram.WebApp;
+      tg.ready();
       tg.expand();
-      function sendSelected() {
-          const selected = Array.from(document.querySelectorAll('input:checked')).map(cb => cb.dataset.id);
-          if (selected.length === 0) {
-              tg.showAlert("Выберите хотя бы одну задачу");
-              return;
-          }
-          tg.sendData(JSON.stringify({
-              action: "select_tasks",
-              user_id: {{ user_id }},
-              position: {{ position }},
-              task_ids: selected
-          }));
-          tg.close();
+
+      let hasChanges = false;
+      let originalCheckedState = [];
+
+      // Получаем данные из шаблона
+      const position = {{ position|default(0) }};
+      let userId = null;
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        userId = tg.initDataUnsafe.user.id;
       }
+
+      // ========== ЗАГРУЗКА ДАННЫХ ==========
+      async function loadData() {
+        if (!userId) {
+          tg.showAlert("Ошибка: не удалось определить пользователя");
+          return;
+        }
+
+        if (position > 0) {
+          // Режим выбора темы: задачи уже в HTML, нужно только отметить чекбоксы по корзине
+          try {
+            const response = await fetch("/api/get_cart", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: userId })
+            });
+            const data = await response.json();
+            const cart = data.cart || [];
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+              cb.checked = cart.includes(cb.dataset.id);
+            });
+          } catch (err) {
+            console.error("Ошибка загрузки корзины:", err);
+          }
+        } else {
+          // Режим корзины: нужно загрузить задачи из корзины и отрисовать
+          try {
+            const response = await fetch("/api/get_cart_tasks", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: userId })
+            });
+            const data = await response.json();
+            const tasks = data.tasks || [];
+            const container = document.getElementById("tasks-container");
+            container.innerHTML = "";
+            if (tasks.length === 0) {
+              container.innerHTML = "<p>Корзина пуста</p>";
+            } else {
+              tasks.forEach(task => {
+                const div = document.createElement("div");
+                div.className = "task";
+                div.innerHTML = `
+                  <label class="task-label">
+                    <input type="checkbox" class="checkbox" data-id="${task.source_id}" checked>
+                    <span class="task-text">${task.text.substring(0, 150)}${task.text.length > 150 ? "..." : ""}</span>
+                  </label>
+                `;
+                container.appendChild(div);
+              });
+            }
+          } catch (err) {
+            console.error("Ошибка загрузки задач корзины:", err);
+            tg.showAlert("Не удалось загрузить корзину");
+          }
+        }
+
+        // 👇 ДОБАВЛЯЕМ СЛУШАТЕЛИ НА ЧЕКБОКСЫ
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.addEventListener('change', checkChanges);
+        });
+
+        // 👇 СБРАСЫВАЕМ ТРЕКИНГ ПОСЛЕ ЗАГРУЗКИ
+        resetChangesTracking();
+      }
+
+      // ========== УПРАВЛЕНИЕ КНОПКОЙ ==========
+      function updateButton() {
+        const btn = document.getElementById('save-btn');
+        if (!btn) return;
+        if (hasChanges) {
+          btn.textContent = '💾 Сохранить изменения';
+          btn.onclick = sendUpdate;
+          tg.enableClosingConfirmation();  // включаем предупреждение
+        } else {
+          btn.textContent = '✖️ Закрыть';
+          btn.onclick = () => tg.close();
+        }
+      }
+
+      function checkChanges() {
+        const current = Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked);
+        const changed = JSON.stringify(current) !== JSON.stringify(originalCheckedState);
+        if (changed !== hasChanges) {
+          hasChanges = changed;
+          updateButton();
+        }
+      }
+
+      function resetChangesTracking() {
+        originalCheckedState = Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked);
+        hasChanges = false;
+        updateButton();
+      }
+
+      // ========== СОХРАНЕНИЕ ==========
+      async function sendUpdate() {
+        if (!userId) {
+          tg.showAlert("Ошибка: не удалось определить пользователя");
+          return;
+        }
+
+        const selected = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+          .map(cb => cb.dataset.id);
+
+        const payload = {
+          user_id: userId,
+          cart: selected
+        };
+        if (position > 0) {
+          payload.position = position;
+        }
+
+        try {
+          const response = await fetch("/api/update_cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (result.status === "ok") {
+            tg.showAlert("✅ Корзина сохранена!");
+            tg.close();
+          } else {
+            tg.showAlert("❌ Ошибка при сохранении");
+          }
+        } catch (err) {
+          console.error(err);
+          tg.showAlert("❌ Ошибка сети");
+        }
+      }
+
+      // Запуск загрузки после полной загрузки DOM
+      document.addEventListener("DOMContentLoaded", loadData);
     </script>
   </body>
 </html>
