@@ -169,6 +169,8 @@ def cart_management_keyboard(
 ) -> InlineKeyboardMarkup:
     cart_str = ",".join(cart) if cart else ""
     url = base_cart_url
+    if cart_str:
+        url += f"?cart={cart_str}"
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [

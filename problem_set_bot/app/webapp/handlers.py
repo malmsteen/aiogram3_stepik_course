@@ -25,12 +25,10 @@ async def tasks_page(request: web.Request):
     """
     conn = request["conn"]
     position = int(request.match_info.get("position", 13))
-
     cart_param = request.query.get("cart", "")
     cart_ids = cart_param.split(",") if cart_param else []
 
     tasks = await get_problem_texts(conn, position)
-
     for task in tasks:
         task["checked"] = task["source_id"] in cart_ids
 
@@ -43,10 +41,20 @@ async def tasks_page(request: web.Request):
 
 @aiohttp_jinja2.template("tasks.html")
 async def cart_page(request: web.Request):
-    # Не передаём задачи, они будут загружены через API
+    conn = request["conn"]
+    cart_param = request.query.get("cart", "")  # читаем корзину из URL
+    cart_ids = cart_param.split(",") if cart_param else []
+
+    if not cart_ids:
+        tasks = []
+    else:
+        tasks = await get_problems_by_ids(conn, cart_ids)
+        for task in tasks:
+            task["checked"] = True
+
     return {
         "title": "✏️ Редактирование корзины",
-        "tasks": [],  # пустой список, задачи подгрузятся через JS
+        "tasks": tasks,  # ← передаём задачи, а не пустой список
         "position": 0,
     }
 

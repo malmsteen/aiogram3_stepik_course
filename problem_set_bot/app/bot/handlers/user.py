@@ -278,7 +278,7 @@ async def process_text_ans(
 #         # reply_markup=webapp_keyboard(webapp_url=webapp_url),
 #     )
 
-BASE_URL = "https://vs7yfk-37-113-214-170.ru.tuna.am"
+BASE_URL = "https://mei9fp-37-113-214-170.ru.tuna.am"
 TASKS_URL = f"{BASE_URL}/tasks"
 CART_URL = f"{BASE_URL}/cart"
 
@@ -401,14 +401,6 @@ async def handle_webapp_data(message: Message, redis: Redis, conn: AsyncConnecti
         # Режим: полная замена корзины (из /cart)
         await redis.set(cart_key, json.dumps(task_ids), ex=604800)
         await message.answer(f"✅ Корзина обновлена.\n📦 Теперь {len(task_ids)} задач.")
-
-
-@user_router.message(F.web_app_data)
-async def handle_webapp_data(
-    message: Message, state: FSMContext, conn: AsyncConnection
-):
-    logger.info(f"📩 Получены данные из WebApp: {message.web_app_data.data}")
-    await message.answer("✅ Данные получены!")
 
 
 @user_router.message(Command("done"))
