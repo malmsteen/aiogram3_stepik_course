@@ -6,6 +6,7 @@ from aiohttp import web
 from psycopg_pool import AsyncConnectionPool
 from .middlewares import db_middleware
 from .handlers import (
+    choose_page,
     tasks_page,
     cart_page,
     test_page,
@@ -19,15 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 async def run_webapp(
-    host: str, port: int, db_pool: AsyncConnectionPool, redis_client
+    host: str, port: int, db_pool: AsyncConnectionPool, redis_client, bot_token: str
 ) -> None:
     app = web.Application(middlewares=[db_middleware])
     app["db_pool"] = db_pool
     app["redis"] = redis_client
+    app["bot_token"] = bot_token
 
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader("app/webapp/templates"))
+    app.router.add_static("/static/", path="app/webapp/static", name="static")
+    app.router.add_static("/previews/", path="app/webapp/previews", name="previews")
 
+    app.router.add_get("/", choose_page)
     app.router.add_get("/test", test_page)
+    app.router.add_get("/choose", choose_page)
     app.router.add_get("/tasks/{position}", tasks_page)
     app.router.add_get("/cart", cart_page)
     app.router.add_post("/api/update_cart", api_update_cart)

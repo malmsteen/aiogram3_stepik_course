@@ -16,6 +16,7 @@ from app.bot.keyboards.menu_button import get_main_menu_commands
 from app.bot.keyboards.keyboards import (
     sections_keyboard,
     web_sections_keyboard,
+    web_sections_reply_keyboard,
     webapp_keyboard,
     answer_keyboard,
     cart_management_keyboard,
@@ -258,42 +259,20 @@ async def process_text_ans(
     logger.debug(f"Ваш ответ {float_num} к задаче {source_ids[0]}. Отправлен")
 
 
-# @user_router.message(Command("tasks"))
-# async def cmd_tasks(message: Message):
-#     # Адрес, который выдала Tuna (возьмите из логов или tuna.log)
-
-#     BASE_URL = "https://4dhjz4-37-113-214-206.ru.tuna.am/tasks"
-
-#     position = 13  # номер темы (позиции) - можно сделать динамическим
-#     user_id = message.from_user.id
-
-#     # Формируем полный URL
-#     webapp_url = f"{BASE_URL}/{position}"
-
-#     # Создаём кнопку с WebApp
-
-#     await message.answer(
-#         "Нажмите кнопку ниже, чтобы открыть список задач и выбрать нужные для печати:",
-#         reply_markup=web_sections_keyboard(webapp_url=webapp_url),
-#         # reply_markup=webapp_keyboard(webapp_url=webapp_url),
-#     )
-
-BASE_URL = "https://mei9fp-37-113-214-170.ru.tuna.am"
-TASKS_URL = f"{BASE_URL}/tasks"
-CART_URL = f"{BASE_URL}/cart"
-
-
 @user_router.message(Command("choose"))
-async def cmd_tasks(message: Message, redis: Redis):
+async def cmd_tasks(message: Message, redis: Redis, base_url: str):
     if not redis:
         await message.answer("Ошибка: Redis не доступен")
         return
+
+    base_url = base_url
+    tasks_url = f"{base_url}/tasks"
 
     user_id = message.from_user.id
     cart_json = await redis.get(f"cart:{user_id}")
     cart = json.loads(cart_json) if cart_json else []
 
-    keyboard = web_sections_keyboard(base_url=TASKS_URL, cart=cart)
+    keyboard = web_sections_keyboard(base_url=tasks_url, cart=cart)
 
     await message.answer(
         "📚 Выберите тему, чтобы добавить задачи в корзину.\n"
@@ -303,18 +282,21 @@ async def cmd_tasks(message: Message, redis: Redis):
 
 
 @user_router.message(Command("cart"))
-async def cmd_cart(message: Message, redis: Redis):
+async def cmd_cart(message: Message, redis: Redis, base_url: str):
     user_id = message.from_user.id
     cart_json = await redis.get(f"cart:{user_id}")
     cart = json.loads(cart_json) if cart_json else []
     size = len(cart)
+
+    base_url = base_url
+    cart_url = f"{base_url}/cart"
 
     if size == 0:
         await message.answer("📭 Корзина пуста. Используйте /choose для выбора задач.")
         return
 
     keyboard = cart_management_keyboard(
-        cart_size=size, base_cart_url=CART_URL, cart=cart
+        cart_size=size, base_cart_url=cart_url, cart=cart
     )
     await message.answer(
         f"📦 В корзине {size} задач.\n"
@@ -330,23 +312,25 @@ async def print_cart_callback(
     conn: AsyncConnection,
     texlive,
     i18n: dict,
+    base_url: str,
 ):
     user_id = callback.from_user.id
     cart_json = await redis.get(f"cart:{user_id}")
     cart = json.loads(cart_json) if cart_json else []
+    base_url = base_url
+    cart_url = f"{base_url}/cart"
 
     if not cart:
         await callback.answer("Корзина пуста", show_alert=True)
         return
     keyboard = cart_management_keyboard(
-        cart_size=len(cart), base_cart_url=CART_URL, cart=cart
+        cart_size=len(cart), base_cart_url=cart_url, cart=cart
     )
 
     # await message.answer()
     await callback.message.edit_text(
         text=i18n.get("compiling"),
         reply_markup=keyboard,
-        show_alert=False,
     )
     problems = await get_problems_by_ids(conn, cart)
     pdf_doc = await make_problems_pdf(problems, user_id, texlive)
@@ -354,7 +338,6 @@ async def print_cart_callback(
     await callback.message.edit_text(
         text=i18n.get("compilation_done"),
         reply_markup=keyboard,
-        show_alert=False,
     )
     await callback.message.answer_document(document=pdf_doc)
 
@@ -442,9 +425,9 @@ async def show_selected(message: Message, state: FSMContext):
 
 
 @user_router.message(Command("test"))
-async def cmd_test(message: Message):
+async def cmd_test(message: Message, base_url: str):
     # Базовый URL без /tasks (корневой)
     # замените на ваш домен
-    test_url = f"{BASE_URL}/test"
+    test_url = f"{base_url}/test"
     keyboard = test_keyboard(url=test_url)
     await message.answer("Нажмите кнопку для теста:", reply_markup=keyboard)

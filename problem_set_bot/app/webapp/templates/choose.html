@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 12px;
+        margin: 0;
+        background: var(--tg-theme-bg-color);
+        color: var(--tg-theme-text-color);
+      }
+      h3 {
+        margin: 0 0 12px 0;
+        font-size: 20px;
+        font-weight: 600;
+        text-align: center;
+      }
+      .hint {
+        margin: 0 0 12px 0;
+        font-size: 12px;
+        color: var(--tg-theme-hint-color);
+        text-align: center;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      a.card {
+        display: block;
+        padding: 12px;
+        border-radius: 10px;
+        text-decoration: none;
+        background: var(--tg-theme-secondary-bg-color);
+        color: var(--tg-theme-text-color);
+      }
+      a.card:active { opacity: 0.6; }
+      .title { font-size: 14px; line-height: 1.35; }
+      .badge { font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 6px; }
+      button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        background: var(--tg-theme-button-color);
+        color: var(--tg-theme-button-text-color);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>📚 Выбор темы</h3>
+    <p class="hint">Откройте тему, отметьте задачи, нажмите «Сохранить».</p>
+    <div class="grid">
+      {% for s in sections %}
+      <a class="card" href="/tasks/{{ loop.index }}{% if cart_str %}?cart={{ cart_str }}{% endif %}">
+        <div class="title">{{ loop.index }}. {{ s }}</div>
+        {% if cart_size %}
+        <div class="badge">В корзине: {{ cart_size }}</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+
+    <button id="close-btn" type="button">✖️ Закрыть</button>
+
+    <script>
+      const tg = window.Telegram?.WebApp;
+      tg?.ready?.();
+
+      document.getElementById("close-btn").addEventListener("click", () => {
+        try { tg?.close?.(); } catch (e) { console.error(e); }
+        window.close();
+        setTimeout(() => {
+          if (document.visibilityState === "visible") history.back();
+        }, 150);
+      });
+    </script>
+  </body>
+</html>

@@ -52,6 +52,13 @@ class ProxySettings:
 
 
 @dataclass
+class WebAppSettings:
+    host: str
+    port: int
+    base_url: str
+
+
+@dataclass
 class Config:
     bot: BotSettings
     db: DatabaseSettings
@@ -59,6 +66,7 @@ class Config:
     log: LoggSettings
     tex: TexliveSettings
     proxy: ProxySettings
+    webapp: WebAppSettings
 
 
 def load_config(path: str | None = None) -> Config:
@@ -100,6 +108,12 @@ def load_config(path: str | None = None) -> Config:
         username=env("REDIS_USERNAME", default=""),
     )
 
+    webapp = WebAppSettings(
+        host=env("WEBAPP_HOST", default="0.0.0.0"),
+        port=env.int("WEBAPP_PORT", default=5000),
+        base_url=env("BASE_URL"),
+    )
+
     logg_settings = LoggSettings(level=env("LOG_LEVEL"), format=env("LOG_FORMAT"))
 
     logger.info("Configuration loaded successfully")
@@ -122,4 +136,5 @@ def load_config(path: str | None = None) -> Config:
         log=logg_settings,
         tex=tex,
         proxy=proxy,
+        webapp=webapp,
     )

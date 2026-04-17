@@ -74,7 +74,11 @@ async def main(config: Config) -> None:
 
     asyncio.create_task(
         run_webapp(
-            host="0.0.0.0", port=8080, db_pool=db_pool, redis_client=redis_client
+            host=config.webapp.host,
+            port=config.webapp.port,
+            db_pool=db_pool,
+            redis_client=redis_client,
+            bot_token=config.bot.token,
         )
     )
 
@@ -109,6 +113,7 @@ async def main(config: Config) -> None:
             texlive=texlive,
             storage=storage,
             redis=redis_client,
+            base_url=config.webapp.base_url,
         )
     except Exception as e:
         logger.exception(e)

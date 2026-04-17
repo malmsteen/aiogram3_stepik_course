@@ -3,8 +3,9 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     WebAppInfo,
     ReplyKeyboardMarkup,
+    KeyboardButton,
 )
-from aiogram.utils.keyboard import InlineKeyboardBuilder, KeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 def get_lang_settings_kb(
@@ -104,10 +105,30 @@ def web_sections_keyboard(base_url: str, cart: list = None) -> InlineKeyboardMar
         url = f"{base_url}/{position}"
         if cart_str:
             url += f"?cart={cart_str}"
+        print(url)
         buttons.append(InlineKeyboardButton(text=text, web_app=WebAppInfo(url=url)))
     kb_builder = InlineKeyboardBuilder()
     kb_builder.row(*buttons, width=2)
     return kb_builder.as_markup()
+
+
+def web_sections_reply_keyboard(
+    base_url: str, cart: list = None, width: int = 2
+) -> ReplyKeyboardMarkup:
+    """
+    Reply-клавиатура с WebApp-кнопками для каждой темы.
+    """
+    cart_str = ",".join(cart) if cart else ""
+    buttons = []
+    for idx, text in enumerate(sections):
+        position = idx + 1
+        url = f"{base_url}/{position}"
+        if cart_str:
+            url += f"?cart={cart_str}"
+        buttons.append(KeyboardButton(text=text, web_app=WebAppInfo(url=url)))
+
+    rows = [buttons[i : i + width] for i in range(0, len(buttons), width)]
+    return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
 # def cart_management_keyboard(
@@ -200,3 +221,16 @@ def test_keyboard(url: str):
     )
 
     return keyboard
+
+
+def choose_reply_keyboard(url: str) -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(
+                    text="📋 Выбрать задачи (WebApp)", web_app=WebAppInfo(url=url)
+                )
+            ]
+        ],
+        resize_keyboard=True,
+    )
