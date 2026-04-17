@@ -31,9 +31,9 @@ h3 {
 }
 .task-label {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
+  gap: 8px;
 }
 .checkbox {
   margin-top: 2px;
@@ -70,21 +70,28 @@ button:active {
   font-size: 12px;
   color: var(--tg-theme-hint-color);
 }
-
+.task-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
 .task-image {
   display: block;
-  max-width: 100%;
-  width: auto;
-  max-height: 400px;
-
+  max-width: 900px;
+  width: 100%;
   height: auto;
-  margin: 10px auto;
+  margin: 12px auto;
   border-radius: 6px;
-  object-fit: contain;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  cursor: zoom-in;
 }
 
 @media (min-width: 600px) {
   .task-image {
-    max-width: 80%;
+    max-width: 100%;
+    padding: 4px;
+    margin: 8px 0;
   }
 }

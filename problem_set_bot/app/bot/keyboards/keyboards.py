@@ -105,7 +105,7 @@ def web_sections_keyboard(base_url: str, cart: list = None) -> InlineKeyboardMar
         url = f"{base_url}/{position}"
         if cart_str:
             url += f"?cart={cart_str}"
-        print(url)
+
         buttons.append(InlineKeyboardButton(text=text, web_app=WebAppInfo(url=url)))
     kb_builder = InlineKeyboardBuilder()
     kb_builder.row(*buttons, width=2)

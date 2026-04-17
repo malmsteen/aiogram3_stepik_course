@@ -27,12 +27,11 @@
         {% for task in tasks %}
         <div class="task">
             <label class="task-label">
-                <input type="checkbox" class="checkbox" data-id="{{ task.source_id }}" {% if task.checked %}checked{%
-                    endif %}>
-                <div class="task-text">
-                    <!-- Выводим текст задачи -->
-                    {{ task.text }}
+                <div class="task-header">
+                    <input type="checkbox" class="checkbox" data-id="{{ task.source_id }}" {% if task.checked
+                        %}checked{% endif %}>                    
                 </div>
+                <img src="{{ url('previews', filename='preview_' ~ task.source_id ~ '.png') }}" class="task-image">
             </label>
         </div>
         {% endfor %}
