@@ -276,7 +276,7 @@ async def cmd_tasks(message: Message, redis: Redis, base_url: str):
     # ВАЖНО: сохраняем результат answer() - это сообщение БОТА
     bot_msg = await message.answer(
         "📚 Выберите тему, чтобы добавить задачи в корзину.\n"
-        f"📦 В корзине: {len(cart)} задач\n\n",
+        f"📦 Задач в корзине: {len(cart)}.",
         reply_markup=keyboard,
     )
 
