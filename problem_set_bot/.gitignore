@@ -1,0 +1,3 @@
+app/infrastructure/latex/images/*.png
+app/webapp/previews/*.png
+*.json

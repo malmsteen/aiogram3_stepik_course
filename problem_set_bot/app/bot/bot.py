@@ -79,6 +79,8 @@ async def main(config: Config) -> None:
             db_pool=db_pool,
             redis_client=redis_client,
             bot_token=config.bot.token,
+            bot=bot,
+            base_url=config.webapp.base_url,
         )
     )
 

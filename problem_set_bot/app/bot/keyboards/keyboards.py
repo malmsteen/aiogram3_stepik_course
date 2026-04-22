@@ -186,8 +186,9 @@ def webapp_keyboard(webapp_url: str) -> InlineKeyboardMarkup:
 
 
 def cart_management_keyboard(
-    cart_size: int, base_cart_url: str, cart: list = None
+    base_cart_url: str, cart: list = None
 ) -> InlineKeyboardMarkup:
+    cart_size = len(cart)
     cart_str = ",".join(cart) if cart else ""
     url = base_cart_url
     if cart_str:

@@ -20,12 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 async def run_webapp(
-    host: str, port: int, db_pool: AsyncConnectionPool, redis_client, bot_token: str
+    host: str,
+    port: int,
+    db_pool: AsyncConnectionPool,
+    redis_client,
+    bot_token: str,
+    bot,
+    base_url: str,
 ) -> None:
     app = web.Application(middlewares=[db_middleware])
     app["db_pool"] = db_pool
     app["redis"] = redis_client
     app["bot_token"] = bot_token
+    app["bot"] = bot
+    app["base_url"] = base_url
 
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader("app/webapp/templates"))
     app.router.add_static("/static/", path="app/webapp/static", name="static")

@@ -23,7 +23,6 @@ async function loadData() {
   // (на основе параметра cart в URL). Никаких API-запросов не нужно.
   console.info("[WebApp] page loaded, position:", position);
 
-  // Добавляем слушатели на чекбоксы
   document.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
     cb.removeEventListener("change", checkChanges);
     cb.addEventListener("change", checkChanges);

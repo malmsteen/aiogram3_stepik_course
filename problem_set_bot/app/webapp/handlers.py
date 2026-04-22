@@ -2,6 +2,7 @@
 
 from aiohttp import web
 from aiogram.utils.web_app import safe_parse_webapp_init_data
+from aiogram.exceptions import TelegramBadRequest
 import aiohttp_jinja2
 from app.infrastructure.database.db import (
     get_problem_texts,
@@ -10,7 +11,11 @@ from app.infrastructure.database.db import (
 )
 import json, hmac, hashlib, logging, time
 from urllib.parse import parse_qsl
-from app.bot.keyboards.keyboards import sections
+from app.bot.keyboards.keyboards import (
+    sections,
+    web_sections_keyboard,
+    cart_management_keyboard,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +118,88 @@ def validate_init_data(init_data, bot_token):
     return json.loads(data["user"]), "manual_parse_ok"
 
 
+async def update_choose_keyboard(redis, bot, user_id: int, base_url: str):
+    """Обновляет клавиатуру выбора тем после изменения корзины"""
+    choose_msg_key = f"choose_msg:{user_id}"
+    choose_msg_data = await redis.get(choose_msg_key)
+
+    if not choose_msg_data:
+        return
+
+    msg_info = json.loads(choose_msg_data)
+
+    # Получаем актуальную корзину
+    cart_json = await redis.get(f"cart:{user_id}")
+    cart = json.loads(cart_json) if cart_json else []
+
+    # Генерируем новую клавиатуру
+    tasks_url = f"{base_url}/tasks"
+    new_keyboard = web_sections_keyboard(base_url=tasks_url, cart=cart)
+
+    try:
+
+        # Обновляем текст
+        await bot.edit_message_text(
+            chat_id=msg_info["chat_id"],
+            message_id=msg_info["msg_id"],
+            text=f"📚 Выберите тему, чтобы добавить задачи в корзину.\n"
+            f"📦 В корзине: {len(cart)} задач\n\n",
+            reply_markup=new_keyboard,
+        )
+
+        logger.info(f"Keyboard updated for user {user_id}, cart size: {len(cart)}")
+
+    except TelegramBadRequest as e:
+
+        # Если сообщение удалено, чистим ключ
+        if "message to edit not found" in str(e) or "message is not modified" in str(e):
+            await redis.delete(choose_msg_key)
+            logger.info(f"Deleted stale keyboard reference for user {user_id}")
+        else:
+            logger.error(f"Failed to update keyboard for user {user_id}: {e}")
+
+
+async def update_cart_keyboard(redis, bot, user_id: int, base_url: str):
+    """Обновляет клавиатуру выбора тем после изменения корзины"""
+    cart_msg_key = f"cart_msg:{user_id}"
+    cart_msg_data = await redis.get(cart_msg_key)
+
+    if not cart_msg_data:
+        return
+
+    msg_info = json.loads(cart_msg_data)
+
+    # Получаем актуальную корзину
+    cart_json = await redis.get(f"cart:{user_id}")
+    cart = json.loads(cart_json) if cart_json else []
+    cart_url = f"{base_url}/cart"
+
+    # Генерируем новую клавиатуру
+    new_keyboard = cart_management_keyboard(base_cart_url=cart_url, cart=cart)
+
+    try:
+
+        # Обновляем текст
+        await bot.edit_message_text(
+            chat_id=msg_info["chat_id"],
+            message_id=msg_info["msg_id"],
+            text=f"📦 Задач в корзине: {len(cart)}.\n"
+            "Вы можете отредактировать список (снять/отметить задачи) или сразу отправить на печать.",
+            reply_markup=new_keyboard,
+        )
+
+        logger.info(f"Keyboard updated for user {user_id}, cart size: {len(cart)}")
+
+    except TelegramBadRequest as e:
+
+        # Если сообщение удалено, чистим ключ
+        if "message to edit not found" in str(e) or "message is not modified" in str(e):
+            await redis.delete(cart_msg_key)
+            logger.info(f"Deleted stale keyboard reference for user {user_id}")
+        else:
+            logger.error(f"Failed to update keyboard for user {user_id}: {e}")
+
+
 async def api_update_cart(request):
     data = await request.json()
     init_data = data.get("initData")
@@ -128,6 +215,7 @@ async def api_update_cart(request):
         return web.json_response({"error": "Server configuration error"}, status=500)
 
     user, reason = validate_init_data(init_data, bot_token)
+    print(user)
     if not user or "id" not in user:
         parsed = dict(parse_qsl(init_data or "", keep_blank_values=True))
         auth_date_raw = parsed.get("auth_date")
@@ -171,6 +259,14 @@ async def api_update_cart(request):
         new_cart = cart
 
     await redis.set(cart_key, json.dumps(new_cart), ex=604800)
+
+    # ОБНОВЛЯЕМ КЛАВИАТУРУ
+    bot = request.app.get("bot")
+    base_url = request.app.get("base_url")
+    if bot and base_url:
+        await update_choose_keyboard(redis, bot, user_id, base_url)
+        await update_cart_keyboard(redis, bot, user_id, base_url)
+
     return web.json_response({"status": "ok"})
 
 

@@ -265,7 +265,6 @@ async def cmd_tasks(message: Message, redis: Redis, base_url: str):
         await message.answer("Ошибка: Redis не доступен")
         return
 
-    base_url = base_url
     tasks_url = f"{base_url}/tasks"
 
     user_id = message.from_user.id
@@ -274,10 +273,23 @@ async def cmd_tasks(message: Message, redis: Redis, base_url: str):
 
     keyboard = web_sections_keyboard(base_url=tasks_url, cart=cart)
 
-    await message.answer(
+    # ВАЖНО: сохраняем результат answer() - это сообщение БОТА
+    bot_msg = await message.answer(
         "📚 Выберите тему, чтобы добавить задачи в корзину.\n"
-        "Уже выбранные задачи будут отмечены галочками.\n\n",
+        f"📦 В корзине: {len(cart)} задач\n\n",
         reply_markup=keyboard,
+    )
+
+    # Сохраняем ID сообщения бота
+    await redis.set(
+        f"choose_msg:{user_id}",
+        json.dumps(
+            {
+                "chat_id": bot_msg.chat.id,
+                "msg_id": bot_msg.message_id,  # ← ID сообщения бота
+            }
+        ),
+        ex=86400,
     )
 
 
@@ -288,20 +300,28 @@ async def cmd_cart(message: Message, redis: Redis, base_url: str):
     cart = json.loads(cart_json) if cart_json else []
     size = len(cart)
 
-    base_url = base_url
     cart_url = f"{base_url}/cart"
 
     if size == 0:
         await message.answer("📭 Корзина пуста. Используйте /choose для выбора задач.")
         return
 
-    keyboard = cart_management_keyboard(
-        cart_size=size, base_cart_url=cart_url, cart=cart
-    )
-    await message.answer(
-        f"📦 В корзине {size} задач.\n"
+    keyboard = cart_management_keyboard(base_cart_url=cart_url, cart=cart)
+    bot_msg = await message.answer(
+        f"📦 Задач в корзине: {size}.\n"
         "Вы можете отредактировать список (снять/отметить задачи) или сразу отправить на печать.",
         reply_markup=keyboard,
+    )
+
+    await redis.set(
+        f"cart_msg:{user_id}",
+        json.dumps(
+            {
+                "chat_id": bot_msg.chat.id,
+                "msg_id": bot_msg.message_id,  # ← ID сообщения бота
+            }
+        ),
+        ex=86400,
     )
 
 
@@ -323,9 +343,7 @@ async def print_cart_callback(
     if not cart:
         await callback.answer("Корзина пуста", show_alert=True)
         return
-    keyboard = cart_management_keyboard(
-        cart_size=len(cart), base_cart_url=cart_url, cart=cart
-    )
+    keyboard = cart_management_keyboard(base_cart_url=cart_url, cart=cart)
 
     # await message.answer()
     await callback.message.edit_text(
