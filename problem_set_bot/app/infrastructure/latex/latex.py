@@ -3,7 +3,7 @@ import logging
 import subprocess
 import os
 import regex as re
-from app.infrastructure.latex.util import footer, header, postface
+from app.infrastructure.latex.util import footer, header, postface, preface
 from aiogram.types.input_file import FSInputFile
 import requests
 
@@ -82,7 +82,7 @@ async def make_pdf(probs, texlive):
     
     HREF_PREF = texlive.fipiurl
 
-    tex_content = header
+    tex_content = header + '\n\n' + preface
     pos = int(probs[0]['position'])-1
     title = sections[pos]
     tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
@@ -101,7 +101,7 @@ async def make_pdf(probs, texlive):
         href = f"\\myhref{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
-    tex_content += postface + '\n'+ footer
+    tex_content += '\n'+ footer
     texfile = f'{sections[pos]}.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
@@ -118,7 +118,7 @@ async def make_pdf_all(probs, texlive):
 
     HREF_PREF = texlive.fipiurl
 
-    tex_content = header
+    tex_content = header + '\n\n' + preface
     pos = int(probs[0]['position'])-1
     title = sections[pos]
     tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
@@ -152,7 +152,7 @@ async def make_pdf_all(probs, texlive):
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{problem['text']}{fig}}}\n\\end{{problem}}'
 
 
-    tex_content += postface + '\n'+ footer
+    tex_content += '\n'+ footer
     texfile = f'Все типы задач ФИПИ.tex'
     pdfpath = f'pdf/{texfile}'
     with open(pdfpath, 'w', encoding='utf-8') as fw:
@@ -168,7 +168,7 @@ async def make_variant(probs, texlive):
     
     HREF_PREF = texlive.fipiurl
 
-    tex_content = header    
+    tex_content = header + '\n\n' + preface
     title = "Вариант"
     tex_content += f"\\section*{{{title}}}\n\\begin{{multicols}}{{2}}"
     curdir = os.getcwd()
@@ -186,7 +186,7 @@ async def make_variant(probs, texlive):
         href = f"\\myhref{{{HREF_PREF + prob['source_id']}}}{{{prob['source_id']}}}"
         tex_content +=  f'\n\\begin{{problem}}[{href}]\n{{{prob['text']}{fig}}}\n\\end{{problem}}'
 
-    tex_content += postface + '\n'+ footer
+    tex_content += '\n'+ footer
     print(tex_content)
     texfile = f'{title}.tex'
     pdfpath = f'pdf/{texfile}'
