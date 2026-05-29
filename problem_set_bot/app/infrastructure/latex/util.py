@@ -95,6 +95,7 @@ heightrounded
 \setlength{\abovecaptionskip}{3pt plus 1pt minus 1pt}
 % -------------------------------------------------------------------------
 \usepackage{wrapfig}
+\usepackage[export]{adjustbox}
 
 %------------------------ Номера задач и ответов --------------------------
 %\newcounter{zadacha}
@@ -166,7 +167,7 @@ heightrounded
 \setlist{nolistsep}
 
 \AddEnumerateCounter{\asbuk}{\@asbuk}{\cyrm}
-\setlist[enumerate,1]{label=\asbuk*),ref=\alph*}
+\setlist[enumerate,1]{label=\arabic*),ref=\alph*}
 \renewcommand{\theenumii}{\asbuk{enumii}}
 \renewcommand{\labelitemi}{---}
 
@@ -203,7 +204,7 @@ heightrounded
 	\refstepcounter{problem}%
 	\par\noindent\textcolor{myblue}{\textbf{\theproblem.}}%
 	\ \textcolor{myblue}{#1}% Optional title in different color
-	\par\noindent\nopagebreak%
+	\nopagebreak \par\noindent\nopagebreak%
 }{\par \vspace{2mm}}
 
 \definecolor{myblue}{RGB}{0,82,155}
@@ -211,6 +212,7 @@ heightrounded
 \definecolor{tgblue}{RGB}{39,167,231}
 \definecolor{mygreen}{RGB}{0,110,51}
 \newcommand{\smallpm}{\mathbin{\raisebox{0.3ex}{$\pm$}}}
+\usepackage{subcaption}
 
 \begin{document}
 
@@ -224,7 +226,7 @@ preface = r"""
 На сегодняшний день готова подборка всей базы ФИПИ ОГЭ -- \textbf{3884 задачи, отсортированных по своей позиции в варианте»}. По ссылке в qr-кодах, указанных ниже вы можете ознакомиться с описанием и содержанием. Покупая эти материалы, вы экономите себе время на подборку задач -- ведь это полное собрание и все задачи перед глазами, улучшаете качество своей работы и подготовки учеников, если вы преподаете, и просто эффективнее занимаетесь, если вы ученик, и, что очень важно, поддерживаете уже сделанную работу, и развитие проекта.
 
 
-Есть также есть вся база ФИПИ по профильной математике - \textbf{978 отсортированных по темам задач} -- готово с сентября и бесплатно, а данный файл является частью этой базы. Вы можете забрать его либо написав в сообщения в группу вконтакте - \myhref{https://vk.com/math_and_beyond}{vk.com/math\_and\_beyond},  либо в телеграм-боте - \myhref{https://t.me/problem_bank_bot}{@problem\_bank\_bot}, там все задачи по каждой теме, бот позволяет генерировать подборки сверстанные в \LaTeX  по каждой теме, все вместе, генерировать случайный вариант. Есть удобный функционал отбора нужных задач в корзину (работает только в мобильном telegram, но весь чат в десктопной версии отображается). Готовые pdf хорошо сверстаны, удобны для чтения на мобильных устройствах, не требуют большого количества бумаги, если соберетесь печатать. Каждая задача содежит ссылку на страницу сайта ФИПИ - там вы может ввести и проверить ответ, если он числовой, сверить текст задачи, и в конце концов убедиться, что задача в банке существует. Сборники будут полезны для учителей, репетиторов и учеников. У вас есть возможность поучаствовать в развитии и поддержать работу донатами в группе в вконтакте и на \myhref{https://boosty.to/mathandbeyond/donate}{boosty.to}
+Есть также есть вся база ФИПИ по профильной математике - \textbf{997 отсортированных по темам задач} -- готово с сентября и бесплатно, а данный файл является частью этой базы. Вы можете забрать его либо написав в сообщения в группу вконтакте - \myhref{https://vk.com/math_and_beyond}{vk.com/math\_and\_beyond},  либо в телеграм-боте - \myhref{https://t.me/problem_bank_bot}{@problem\_bank\_bot}, там все задачи по каждой теме, бот позволяет генерировать подборки сверстанные в \LaTeX  по каждой теме, все вместе, генерировать случайный вариант. Есть удобный функционал отбора нужных задач в корзину (работает только в мобильном telegram, но весь чат в десктопной версии отображается). Готовые pdf хорошо сверстаны, удобны для чтения на мобильных устройствах, не требуют большого количества бумаги, если соберетесь печатать. Каждая задача содежит ссылку на страницу сайта ФИПИ - там вы может ввести и проверить ответ, если он числовой, сверить текст задачи, и в конце концов убедиться, что задача в банке существует. Сборники будут полезны для учителей, репетиторов и учеников. У вас есть возможность поучаствовать в развитии и поддержать работу донатами в группе в вконтакте и на \myhref{https://boosty.to/mathandbeyond/donate}{boosty.to}
 
 
 Ответы я собираю, поэтому сделал в боте команду, с помощью которой его можно отправить как текстом, так и фото.
@@ -298,6 +300,30 @@ footer = r"""
 \end{document}
 """
 
+footer_oge = r"""
+    
+	% close solution file
+	\Closesolutionfile{mysolutions}
+
+	% renew the solution environment so that it hyperlinks back to
+	% the question
+	\renewenvironment{mySoln}[1]{%
+		% add some glue
+		\vskip .5cm plus 2cm minus 0.1cm%
+		{\bfseries \hypersetup{linkcolor=mygreen} \hyperlink{question:#1}{#1.}}%
+	}%
+	{%
+	}%
+	%\newpage
+	%\section*{Ответы}
+	\setlength{\parindent}{0.0mm}
+	% input the file if it exists
+	%\begin{multicols}{2}
+	\IfFileExists{mysolutions.tex}{\input{mysolutions.tex}}{}
+	%\end{multicols}
+
+\end{document}
+"""
 
 async def remove_user_files(user_id, wordir="pdf"):
     tempfiles = [f for f in os.listdir(wordir) if str(user_id) in f]

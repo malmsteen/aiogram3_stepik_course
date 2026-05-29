@@ -28,6 +28,7 @@ from app.infrastructure.latex.latex import (
     make_pdf_all,
     make_problems_pdf,
     make_variant,
+    make_variant_oge
 )
 from app.infrastructure.latex.util import remove_user_files
 
@@ -43,6 +44,7 @@ from app.infrastructure.database.db import (
     get_problem_ids_by_position,
     add_problem_answer,
     get_variant,
+    get_variant_oge
 )
 from psycopg.connection_async import AsyncConnection
 from redis.asyncio import Redis
@@ -449,3 +451,11 @@ async def cmd_test(message: Message, base_url: str):
     test_url = f"{base_url}/test"
     keyboard = test_keyboard(url=test_url)
     await message.answer("Нажмите кнопку для теста:", reply_markup=keyboard)
+
+
+@user_router.message(Command("oge"))
+async def process_oge(message: Message,conn: AsyncConnection, i18n: dict[str, str], texlive):
+    context, ctx_tasks, rest_tasks = await get_variant_oge(conn)
+    # print(context, ctx_tasks, rest_tasks)
+    pdf_doc = await make_variant_oge(context, ctx_tasks, rest_tasks, texlive)
+    await message.answer_document(document=pdf_doc)

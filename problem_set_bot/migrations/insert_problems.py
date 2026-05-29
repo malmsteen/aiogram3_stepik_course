@@ -40,13 +40,15 @@ async def main():
                             CREATE TABLE IF NOT EXISTS problems(
                                 problem_id SERIAL PRIMARY KEY,
                                 topics TEXT[],
-                                type VARCHAR(20),
+                                type VARCHAR(50),
                                 source_id VARCHAR(10),
                                 source VARCHAR(20) DEFAULT 'fipi',
-                                img TEXT,
+                                img TEXT[],
                                 url TEXT,
-                                text TEXT NOT NULL,
-                                position INTEGER
+                                text TEXT[] NOT NULL,
+                                position INTEGER,
+                                exam_type VARCHAR(5),
+                                context_id INTEGER
                             ); 
                         """
                     )
@@ -61,9 +63,79 @@ async def main():
             logger.info("Connection to Postgres closed")
 
 
+    with open('oge_contexts.json', 'r') as fr:
+        contexts = json.load(fr)
+    
+    try:
+        connection = await get_pg_connection(
+            db_name=config.db.name,
+            host=config.db.host,
+            port=config.db.port,
+            user=config.db.user,
+            password=config.db.password,
+        )
+        async with connection:
+            async with connection.transaction():
+                async with connection.cursor() as cursor:
+                    await cursor.execute(
+                        query="""
+                            CREATE TABLE IF NOT EXISTS contexts(
+                                context_id SERIAL PRIMARY KEY,          
+                                source_id VARCHAR(10),                                
+                                name VARCHAR(30),                                                 
+                                content TEXT NOT NULL                         
+                            ); 
+                        """
+                    )
+                logger.info("Table `contexts` was successfully created")
+    except Error as db_error:
+        logger.exception("Database-specific error: %s", db_error)
+    except Exception as e:
+        logger.exception("Unhandled error: %s", e)
+    finally:
+        if connection:
+            await connection.close()
+            logger.info("Connection to Postgres closed")
+
+    try:
+        connection = await get_pg_connection(
+            db_name=config.db.name,
+            host=config.db.host,
+            port=config.db.port,
+            user=config.db.user,
+            password=config.db.password,
+        )
+        async with connection:
+            async with connection.transaction():
+                async with connection.cursor() as cursor:
+                    for context in contexts:                   
+                        source_id = context['fipi_id']
+                        name = context['name'].replace("'", "''")
+                        content = '\n'.join(context['content']).replace("'", "''")
+
+                        query = f"""
+                        INSERT INTO contexts (name, content, source_id)
+                        VALUES (                            
+                            '{name}',
+                            '{content}',
+                            '{source_id}'
+                        );
+                        """
+                        
+                        await cursor.execute(query=query)
+                        logger.info(f"Problem {source_id} inserted")
+    except Error as db_error:
+        logger.exception("Database-specific error: %s", db_error)
+    except Exception as e:
+        logger.exception("Unhandled error: %s", e)
+    finally:
+        if connection:
+            await connection.close()
+            logger.info("Connection to Postgres closed")
 
 
-    with open('fipi_probs_last_w_pos_after_11_10_25.json', 'r') as fr:
+
+    with open('fipi_probs_may_2026.json', 'r') as fr:
         problems = json.load(fr)
 
     try:
@@ -80,26 +152,25 @@ async def main():
                     for problem in problems:
                         topics = problem['topics']
                         prob_type = problem['type']
-                        source_id = problem['id']    
-                        img = problem['img']    
+                        source_id = problem['id']
+                        context_id = problem.get('context_id')
                         url = problem['url']
-                        text = problem['text']
-                        position = problem['position']
-                        # print(problem)
-                        query = f"""
-                        INSERT INTO problems (topics, type, url, text, position, source_id, source) 
-                        VALUES (
-                            ARRAY[{','.join(f"'{topic.replace("'", "''")}'" for topic in topics)}],
-                            '{prob_type}',                         
-                            {f"'{url}'"}, 
-                            '{text.replace("'", "''")}', 
-                            {position},
-                            '{source_id}',   
-                            'fp' 
-                        );
-                        """
+                        text = [problem['text']]                       
+                        position = problem.get('position')
+                        if type(position)==list:
+                            position = 1
+                        exam_type = problem.get('exam_type', 'ege')
+
+                        await cursor.execute(
+                            """
+                            INSERT INTO problems 
+                                (topics, type, url, text, position, source_id, context_id, exam_type, source)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (topics, prob_type, url, text, position, source_id, context_id, exam_type, 'fipi')
+                        )
                         
-                        await cursor.execute(query=query)
+                        
                         logger.info(f"Problem {source_id} inserted")
     except Error as db_error:
         logger.exception("Database-specific error: %s", db_error)
@@ -110,5 +181,52 @@ async def main():
             await connection.close()
             logger.info("Connection to Postgres closed")
 
+
+    with open('oge_onmay_2026.json', 'r') as fr:
+        problems = json.load(fr)
+
+    try:
+        connection = await get_pg_connection(
+            db_name=config.db.name,
+            host=config.db.host,
+            port=config.db.port,
+            user=config.db.user,
+            password=config.db.password,
+        )
+        async with connection:
+            async with connection.transaction():
+                async with connection.cursor() as cursor:
+                    for problem in problems:
+                        topics = problem['topics']
+                        prob_type = problem['type']
+                        source_id = problem['id']
+                        context_id = problem.get('context_id')
+                        url = problem['url']
+                        text = problem['text']                        
+                        position = problem.get('position')
+                        if type(position)==list:
+                            position = 1
+                        exam_type = problem.get('exam_type', 'oge')
+
+                        await cursor.execute(
+                            """
+                            INSERT INTO problems 
+                                (topics, type, url, text, position, source_id, context_id, exam_type, source)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (topics, prob_type, url, text, position, source_id, context_id, exam_type, 'fipi')
+                        )
+                        
+                        
+                        logger.info(f"Problem {source_id} inserted")
+    except Error as db_error:
+        logger.exception("Database-specific error: %s", db_error)
+    except Exception as e:
+        logger.exception("Unhandled error: %s", e)
+    finally:
+        if connection:
+            await connection.close()
+            logger.info("Connection to Postgres closed")
+    
 
 asyncio.run(main())

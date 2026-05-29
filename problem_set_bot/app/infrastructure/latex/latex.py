@@ -3,9 +3,13 @@ import logging
 import subprocess
 import os
 import regex as re
-from app.infrastructure.latex.util import footer, header, postface, preface
+from app.infrastructure.latex.util import footer, footer_oge, header, postface, preface
 from aiogram.types.input_file import FSInputFile
+from app.infrastructure.latex.templates import render_correspondance, render_single_choiсe, render_mult_choiсe, find_imgs
+
 import requests
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,38 +27,6 @@ def send_tex(latex_content, filename, texlive):
         print(f"Error: {response.text}")
         return False
 
-
-def docker_tex_compile(    
-    tex_file: str,
-    container: str = 'texlive',
-    compiler: str = 'lualatex'
-):
-
-    
-    # Команда для Docker
-    cmd = [
-        'docker', 'exec', container,
-        compiler, '-interaction=batchmode',        
-        tex_file,
-       '&&', 'rm', '-f', '*.aux', '*.log', '*.out'        
-    ]
-    
-    # Запуск
-    try:
-        result = subprocess.run(
-            cmd,          
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        print("Компиляция успешна!")
-        print(result.stdout)
-        return True
-        
-    except subprocess.CalledProcessError as e:
-        print(f"Ошибка компиляции (код {e.returncode}):")
-        print(e.stderr)
-        return False
 
 sections = [
     "Планиметрия. Часть I",
@@ -80,7 +52,7 @@ sections = [
 
 async def make_pdf(probs, texlive):
     
-    HREF_PREF = texlive.fipiurl
+    HREF_PREF = texlive.egeurl
 
     tex_content = header + '\n\n' + preface
     pos = int(probs[0]['position'])-1
@@ -116,7 +88,7 @@ async def make_pdf(probs, texlive):
 
 async def make_pdf_all(probs, texlive):
 
-    HREF_PREF = texlive.fipiurl
+    HREF_PREF = texlive.egeurl
 
     tex_content = header + '\n\n' + preface
     pos = int(probs[0]['position'])-1
@@ -166,7 +138,7 @@ async def make_pdf_all(probs, texlive):
     
 async def make_variant(probs, texlive):
     
-    HREF_PREF = texlive.fipiurl
+    HREF_PREF = texlive.egeurl
 
     tex_content = header + '\n\n' + preface
     title = "Вариант"
@@ -201,7 +173,7 @@ async def make_variant(probs, texlive):
 
 async def make_problems_pdf(problems, user_id, texlive):
    
-    HREF_PREF = texlive.fipiurl
+    HREF_PREF = texlive.egeurl
 
     tex_content = header    
     title = "Подборка задач"
@@ -233,4 +205,82 @@ async def make_problems_pdf(problems, user_id, texlive):
     send_tex(tex_content, pdfpath, texlive)
 
     pdf_doc  = FSInputFile(pdfpath, filename=f'{title}.pdf')
+    return pdf_doc
+
+
+
+
+import os
+import re
+from .templates import VARIANT_OGE, PROBLEM, INCLUDEGRAPHICS, MYHREF, OGE_IMG_PATH, subcaption
+
+
+def make_problem(prob, href_pref):
+    # print(prob)
+    position = prob['position']
+    fig = ''
+    if position == 1:
+        text='\n'.join(prob['text'])        
+    elif position in  (7, 13):        
+        text = render_single_choiсe(prob)
+    elif position == 11:        
+        text = render_correspondance(prob)    
+    elif position == 19:       
+        text = prob['text'][0] if len(prob['text']) == 1 \
+            else  render_mult_choiсe(prob['text'])       
+    else:
+        pngimg = f"{OGE_IMG_PATH}/{prob['source_id']}.png"
+        curdir = os.getcwd()
+        fig = INCLUDEGRAPHICS.format(path='oge/' + prob['source_id']) \
+            if os.path.exists(os.path.join(curdir,pngimg)) else ""
+        text = '\n'.join(prob['text'])
+    href = MYHREF.format(href_pref=href_pref, source_id=prob['source_id'])
+    # print(text)
+    return PROBLEM.format(href=href, text=text, fig=fig)
+
+
+def make_block(probs, href_pref):
+    return '\n'.join(make_problem(p, href_pref) for p in probs)
+
+
+
+
+async def make_variant_oge(context, ctx_tasks, rest_tasks, texlive):
+    
+    href_pref = texlive.ogeurl
+    print(rest_tasks)
+    by_pos = lambda a, b: [p for p in rest_tasks if a <= p['position'] <= b]
+    block = lambda probs: make_block(probs, href_pref) 
+    context_imgs = sorted(find_imgs(context['source_id']))
+    print(context)
+    print(context_imgs)
+    if len(context_imgs) == 2:        
+        ctx_content = context['content'].replace('img\nimg', subcaption % tuple(context_imgs))
+    elif len(context_imgs) == 1:
+        ctx_content = context['content'].replace('img', INCLUDEGRAPHICS.format(path='oge/' + context['source_id']))
+    else:
+        ctx_content = context['content']
+    
+
+    tex_content = VARIANT_OGE.format(
+        header=header,
+        context_block=ctx_content,
+        tasks_1_5=block(ctx_tasks),
+        tasks_6_10=block(rest_tasks[:5]),
+        task_11=make_problem(rest_tasks[5], href_pref=href_pref),
+        task_12=block(rest_tasks[6:7]),         
+        task_13=make_problem(rest_tasks[7], href_pref=href_pref),
+        tasks_14_18=block(rest_tasks[8:13]),
+        task_19 = make_problem(rest_tasks[13], href_pref=href_pref),
+        tasks_20_25=block(rest_tasks[14:]),
+        footer=footer_oge
+    )
+
+    print(tex_content)
+    texpath = 'pdf/Вариант ОГЭ.tex'
+    with open(texpath, 'w', encoding='utf-8') as fw:
+        fw.write(tex_content)
+    
+    send_tex(tex_content, texpath[:-3] + 'pdf', texlive)
+    pdf_doc = FSInputFile(texpath[:-3] + 'pdf', filename='Вариант ОГЭ.pdf')
     return pdf_doc

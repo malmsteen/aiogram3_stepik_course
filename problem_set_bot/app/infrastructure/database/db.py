@@ -311,7 +311,7 @@ async def get_problem_ids_by_position(conn: AsyncConnection, num: int) -> list[d
     logger.info(f"Got {limit} problems by position {num}")
     out = []
     for r in rows:
-        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
+        out.append({"text": r[0][0], "source_id": r[1], "position": r[2]})
     return out
 
 
@@ -322,7 +322,7 @@ async def webapp_get_problem_ids_by_position(conn, position: int) -> list[str]:
             "SELECT source_id FROM problems WHERE position = %s", (position,)
         )
         rows = await cursor.fetchall()
-        return [row[0] for row in rows]
+        return [row[0][0] for row in rows]
 
 
 async def get_problem_texts(conn: AsyncConnection, num: int) -> list[dict]:
@@ -341,7 +341,7 @@ async def get_problem_texts(conn: AsyncConnection, num: int) -> list[dict]:
     logger.info(f"Got {limit} problems by position {num}")
     out = []
     for r in rows:
-        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
+        out.append({"text": r[0][0], "source_id": r[1], "position": r[2]})
     return out
 
 
@@ -363,7 +363,7 @@ async def get_all_problem_types(conn: AsyncConnection) -> list[dict]:
     logger.info(f"Got problems, {limit} of each type")
     out = []
     for r in rows:
-        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
+        out.append({"text": r[0][0], "source_id": r[1], "position": r[2]})
     return out
 
 
@@ -385,7 +385,8 @@ async def get_variant(
     logger.info(f"Got {len(rows)} problems for variant")
     out = []
     for r in rows:
-        out.append({"text": r[0], "source_id": r[1]})
+        out.append({"text": r[0][0], "source_id": r[1]})
+    print(out)
     return out
 
 
@@ -405,7 +406,7 @@ async def get_problems_by_ids(conn: AsyncConnection, ids: list) -> list[dict]:
     logger.info(f"Got problem with ids {ids}")
     out = []
     for r in rows:
-        out.append({"text": r[0], "source_id": r[1], "position": r[2]})
+        out.append({"text": r[0][0], "source_id": r[1], "position": r[2]})
     return out
 
 
@@ -442,3 +443,47 @@ async def get_all_alive_users(conn: AsyncConnection):
 async def broadcast_log(conn: AsyncConnection, user_id: int):
     async with conn.cursor() as cur:
         await cur.execute("INSERT INTO broadcast_log (user_id) VALUES (%s)", (user_id,))
+
+
+
+# ------oge--------------------
+
+async def get_variant_oge(conn: AsyncConnection) -> tuple:
+    async with conn.cursor() as cursor:       
+        await cursor.execute("""
+            SELECT c.context_id, c.content, c.source_id
+            FROM contexts c
+            JOIN problems p ON p.context_id = c.context_id
+            GROUP BY c.context_id
+            HAVING COUNT(p.problem_id) >= 5
+            ORDER BY RANDOM()
+            LIMIT 1
+        """)
+        ctx = await cursor.fetchone()
+        ctx_id, ctx_content, source_id = ctx
+        ctx = {"source_id": source_id, "content": ctx_content}
+
+        # 5 случайных задач контекста, порядок по problem_id
+        await cursor.execute("""
+            SELECT text, source_id, position                
+                FROM problems
+                WHERE context_id = %s
+                AND exam_type = 'oge'
+                ORDER BY problem_id, RANDOM()
+                LIMIT 5           
+        """, (ctx_id,))
+        ctx_tasks = [{"text": row[0], "source_id": row[1], 'position': row[2]} 
+                     for row in await cursor.fetchall()]
+
+        # Задачи позиций 6-26, по одной на позицию
+        await cursor.execute("""
+            SELECT DISTINCT ON (position) text, source_id, position
+            FROM problems
+            WHERE exam_type = 'oge'
+            AND position BETWEEN 6 AND 25
+            ORDER BY position, RANDOM()
+        """)
+        rest_tasks = [{"text": row[0], "source_id": row[1], 'position': row[2]} 
+                       for row in await cursor.fetchall()]
+
+    return ctx, ctx_tasks, rest_tasks

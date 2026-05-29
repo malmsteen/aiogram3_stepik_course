@@ -42,7 +42,8 @@ class LoggSettings:
 class TexliveSettings:
     host: str
     port: int
-    fipiurl: str
+    egeurl: str
+    ogeurl: str
 
 
 @dataclass
@@ -119,7 +120,10 @@ def load_config(path: str | None = None) -> Config:
     logger.info("Configuration loaded successfully")
 
     tex = TexliveSettings(
-        host=env("TEXLIVE_HOST"), port=env("TEXLIVE_PORT"), fipiurl=env("HREF_PREF")
+        host=env("TEXLIVE_HOST"),
+        port=env("TEXLIVE_PORT"),
+        egeurl=env("EGE_PREF"),
+        ogeurl=env("OGE_PREF")
     )
 
     proxy_enabled = env.bool("PROXY_ENABLED", default=False)
