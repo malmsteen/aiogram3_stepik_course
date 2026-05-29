@@ -24,33 +24,48 @@ subcaption ="""
 \end{figure}
 """
 
-correspondant = """
-{pre}
-\\vspace{{2mm}}
-\\begin{{center}}
-\\begin{{tabular}}{{lll}}
-\\underline{{ГРАФИКИ}} \\\\
-\\vspace{{2mm}}
-\\textbf{{А)}}	\\includegraphics[scale=0.7, valign=t]{{{fig1}}} &
-\\textbf{{Б)}}	\\includegraphics[scale=0.7, valign=t]{{{fig2}}} &
-\\textbf{{В)}}	\\includegraphics[scale=0.7, valign=t]{{{fig3}}} \\\\
-\\\\
+correspondant = r"""
+{{ pre }}
+\vspace{2mm}
+\begin{center}
+\begin{tabular}{lll}
+{% if is_reverse %}
+    \underline{ГРАФИКИ} \\
+    \vspace{2mm}
+    \textbf{А)} \includegraphics[scale=0.7, valign=t]{{ figs[0] }} &
+    \textbf{Б)} \includegraphics[scale=0.7, valign=t]{{ figs[1] }} &
+    \textbf{В)} \includegraphics[scale=0.7, valign=t]{{ figs[2] }} \\
+    \\
 
-\\underline{{{subj}}} \\\\
-\\vspace{{2mm}} 
-\\textbf{{1)}} {{{cond1}}} &
-\\textbf{{2)}} {{{cond2}}} &
-\\textbf{{3)}} {{{cond3}}} \\\\
-\\end{{tabular}}
-\\end{{center}}
+    \underline{{ subj }} \\
+    \vspace{2mm}
+    \textbf{1)} {{ conds[0] }} &
+    \textbf{2)} {{ conds[1] }} &
+    \textbf{3)} {{ conds[2] }} \\
+{% else %}
+    \underline{{ subj }} \\
+    \vspace{2mm}
+    \textbf{1)} {{ conds[0] }} &
+    \textbf{2)} {{ conds[1] }} &
+    \textbf{3)} {{ conds[2] }} \\
+    \\
+    
+    \underline{ГРАФИКИ} \\
+    \vspace{2mm}
+    \textbf{А)} \includegraphics[scale=0.7, valign=t]{{ figs[0] }} &
+    \textbf{Б)} \includegraphics[scale=0.7, valign=t]{{ figs[1] }} &
+    \textbf{В)} \includegraphics[scale=0.7, valign=t]{{ figs[2] }} \\
+{% endif %}
+\end{tabular}
+\end{center}
 
 В таблице под каждой буквой укажите соответствующий номер.
 
-\\vspace{{2mm}}
-\\begin{{tabular}}{{|c|c|c|}}\\hline
-    А & Б & В \\\\ \\hline
-    & & \\\\ \\hline
-\\end{{tabular}}
+\vspace{2mm}
+\begin{tabular}{|c|c|c|}\hline
+    А & Б & В \\ \hline
+    & & \\ \hline
+\end{tabular}
 """
 
 include_fig_tmpl = "\includegraphics[scale=0.7, valign=m]{images/oge/%s}"
@@ -71,25 +86,34 @@ enum_tmpl_oge = """
 \\end{enumerate}
 """
 
-def render_correspondance(problem):
+def render_correspondance(problem):   
     
-    conds = problem['text'][1:4]
-    pre = problem['text'][0]
-    params = {}
-    params['pre'] = pre
-    
-    if "коэффициент" in pre:
-        params["subj"] = "КОЭФФИЦИЕНТЫ"
+    is_reverse = problem['text'][0] == 'reverse'
+    text = problem['text']
+    if is_reverse:
+        pre = text[1]
+        conds = text[2:5]
+    else:        
+        pre = text[0]
+        conds = text[1:4]
+        
+    if "коэффициент" in ''.join(problem['text']).lower():
+        subj = "КОЭФФИЦИЕНТЫ"
     else:
-        params["subj"] = "ФОРМУЛЫ"
+        subj = "ФУНКЦИИ"   
+    
+    braced_str = lambda x: '{' + str(x) + '}'
+    
+    figs =[f"images/oge/{problem['source_id']}_{i}" for i in range(1,4)]
+    figs_braced = [braced_str(f) for f in figs]
 
-    for i, cond in enumerate(conds, 1):
-        params[f"cond{i}"] = cond
-
-    for i in range(1, 4):
-        params[f"fig{i}"] = f"images/oge/{problem['source_id']}_{i}"
-
-    return correspondant.format(**params)
+    tmpl = Template(correspondant)
+    return tmpl.render(
+        pre=pre,
+        subj=braced_str(subj),
+        figs=figs_braced,
+        conds=conds,
+        is_reverse=is_reverse)
 
 def find_imgs(prob_id: str) -> int:
     
