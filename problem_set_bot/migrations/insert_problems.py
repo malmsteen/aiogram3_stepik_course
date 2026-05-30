@@ -24,78 +24,8 @@ if sys.platform.startswith("win") or os.name == "nt":
 async def main():
     connection: AsyncConnection | None = None
 
-    try:
-        connection = await get_pg_connection(
-            db_name=config.db.name,
-            host=config.db.host,
-            port=config.db.port,
-            user=config.db.user,
-            password=config.db.password,
-        )
-        async with connection:
-            async with connection.transaction():
-                async with connection.cursor() as cursor:
-                    await cursor.execute(
-                        query="""
-                            CREATE TABLE IF NOT EXISTS problems(
-                                problem_id SERIAL PRIMARY KEY,
-                                topics TEXT[],
-                                type VARCHAR(50),
-                                source_id VARCHAR(10),
-                                source VARCHAR(20) DEFAULT 'fipi',
-                                img TEXT[],
-                                url TEXT,
-                                text TEXT[] NOT NULL,
-                                position INTEGER,
-                                exam_type VARCHAR(5),
-                                context_id INTEGER
-                            ); 
-                        """
-                    )
-                logger.info("Table `problems` was successfully created")
-    except Error as db_error:
-        logger.exception("Database-specific error: %s", db_error)
-    except Exception as e:
-        logger.exception("Unhandled error: %s", e)
-    finally:
-        if connection:
-            await connection.close()
-            logger.info("Connection to Postgres closed")
-
-
     with open('oge_contexts.json', 'r') as fr:
-        contexts = json.load(fr)
-    
-    try:
-        connection = await get_pg_connection(
-            db_name=config.db.name,
-            host=config.db.host,
-            port=config.db.port,
-            user=config.db.user,
-            password=config.db.password,
-        )
-        async with connection:
-            async with connection.transaction():
-                async with connection.cursor() as cursor:
-                    await cursor.execute(
-                        query="""
-                            CREATE TABLE IF NOT EXISTS contexts(
-                                context_id SERIAL PRIMARY KEY,          
-                                source_id VARCHAR(10),                                
-                                name VARCHAR(30),                                                 
-                                content TEXT NOT NULL                         
-                            ); 
-                        """
-                    )
-                logger.info("Table `contexts` was successfully created")
-    except Error as db_error:
-        logger.exception("Database-specific error: %s", db_error)
-    except Exception as e:
-        logger.exception("Unhandled error: %s", e)
-    finally:
-        if connection:
-            await connection.close()
-            logger.info("Connection to Postgres closed")
+        contexts = json.load(fr)  
 
     try:
         connection = await get_pg_connection(
@@ -168,8 +98,7 @@ async def main():
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
                             (topics, prob_type, url, text, position, source_id, context_id, exam_type, 'fipi')
-                        )
-                        
+                        )                   
                         
                         logger.info(f"Problem {source_id} inserted")
     except Error as db_error:
@@ -215,9 +144,7 @@ async def main():
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
                             (topics, prob_type, url, text, position, source_id, context_id, exam_type, 'fipi')
-                        )
-                        
-                        
+                        )                       
                         logger.info(f"Problem {source_id} inserted")
     except Error as db_error:
         logger.exception("Database-specific error: %s", db_error)

@@ -21,6 +21,7 @@ from app.bot.keyboards.keyboards import (
     answer_keyboard,
     cart_management_keyboard,
     test_keyboard,
+    oge_keyboard
 )
 from app.bot.states.states import LangSG
 from app.infrastructure.latex.latex import (
@@ -452,10 +453,32 @@ async def cmd_test(message: Message, base_url: str):
     keyboard = test_keyboard(url=test_url)
     await message.answer("Нажмите кнопку для теста:", reply_markup=keyboard)
 
-
-@user_router.message(Command("oge"))
-async def process_oge(message: Message,conn: AsyncConnection, i18n: dict[str, str], texlive):
+@user_router.message(Command(commands="oge"))
+async def process_oge(message: Message, i18n: dict[str, str]):
+    keyboard = oge_keyboard()
+    await message.answer(
+        text=i18n.get("/oge"),
+        reply_markup=keyboard,
+    )
+    
+    
+@user_router.callback_query(F.data == "oge_btn")
+async def process_oge_press(callback: CallbackQuery, conn: AsyncConnection, texlive, i18n: dict[str, str]):
+    await callback.answer()
+    
+    await callback.message.edit_text(
+        text=i18n.get("compiling"), reply_markup=oge_keyboard()
+    )
+    
     context, ctx_tasks, rest_tasks = await get_variant_oge(conn)
     # print(context, ctx_tasks, rest_tasks)
     pdf_doc = await make_variant_oge(context, ctx_tasks, rest_tasks, texlive)
-    await message.answer_document(document=pdf_doc)
+    
+    await callback.message.edit_text(
+        text=i18n.get("compilation_done"),
+        reply_markup=oge_keyboard(),
+        show_alert=False,
+    )
+    await callback.message.answer_document(
+        document=pdf_doc
+    )

@@ -82,9 +82,36 @@ async def main():
                             );
                         """
                     )
-                logger.info(
-                    "Tables `users`, `activity`, `answers` were successfully created"
-                )
+                    await cursor.execute(
+                        query="""
+                            CREATE TABLE IF NOT EXISTS problems(
+                                problem_id SERIAL PRIMARY KEY,
+                                topics TEXT[],
+                                type VARCHAR(50),
+                                source_id VARCHAR(10),
+                                source VARCHAR(20) DEFAULT 'fipi',
+                                img TEXT[],
+                                url TEXT,
+                                text TEXT[] NOT NULL,
+                                position INTEGER,
+                                exam_type VARCHAR(5),
+                                context_id INTEGER
+                            );
+                        """)
+                    logger.info(
+                        "Tables `users`, `activity`, `answers` , `problems` were successfully created")
+                    await cursor.execute(
+                        query="""
+                            CREATE TABLE IF NOT EXISTS contexts(
+                                context_id SERIAL PRIMARY KEY,          
+                                source_id VARCHAR(10),                                
+                                name VARCHAR(30),                                                 
+                                content TEXT NOT NULL                         
+                            ); 
+                        """
+                    )
+                    logger.info("Table `contexts` was successfully created")
+                
     except Error as db_error:
         logger.exception("Database-specific error: %s", db_error)
     except Exception as e:

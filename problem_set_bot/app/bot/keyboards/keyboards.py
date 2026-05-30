@@ -235,3 +235,14 @@ def choose_reply_keyboard(url: str) -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
     )
+
+
+def oge_keyboard() -> InlineKeyboardMarkup:
+
+    button = InlineKeyboardButton(text="Сгенерировать вариант ОГЭ", callback_data='oge_btn')
+  
+    kb_builder = InlineKeyboardBuilder()
+
+    # Распаковываем список с кнопками в билдер методом `row`
+    kb_builder.row(button, width=2)
+    return kb_builder.as_markup()
