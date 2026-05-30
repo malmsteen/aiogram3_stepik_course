@@ -489,13 +489,17 @@ async def process_oge_press(callback: CallbackQuery,  conn: AsyncConnection, tex
             document=pdf_doc
         )   
         
-        msg = i18n.get("done")+'\n'+ i18n.get('/oge').format(rest-1)
+        if rest == 1:
+            msg = i18n.get("oge_limit_violated")
+        else:
+            msg = i18n.get("done")+'\n'+ i18n.get('/oge').format(rest-1)
         
         await callback.message.edit_text(
             text=msg,
             reply_markup=oge_keyboard(),
             show_alert=False,
         )   
+        
     else:
         try:
             await callback.message.edit_text(

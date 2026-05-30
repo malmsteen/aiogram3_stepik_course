@@ -66,7 +66,7 @@ EN: dict[str, str] = {
     "broadcasting": "⏳ Broadcasting...",
     "no_alive": "❌ No alive users for broadcasting.",
     "broadcast_completed": "✅ Broadcasting done.\nBroadcasted to: {} from {} users.",
-    "/oge": "You can generate random variant of OGE.\n Attempts rest: {}",
+    "/oge": "You can generate random variant of OGE.\n Generations rest: {}",
     "oge_limit_violated": "You've reached your limit of 10 OGE variants for today. Reset is tomorrow.",
     "done": "✅ Done!"
 }
