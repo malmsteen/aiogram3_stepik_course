@@ -45,7 +45,9 @@ from app.infrastructure.database.db import (
     get_problem_ids_by_position,
     add_problem_answer,
     get_variant,
-    get_variant_oge
+    get_variant_oge,
+    add_user_oge_activity,
+    get_user_oge_actions
 )
 from psycopg.connection_async import AsyncConnection
 from redis.asyncio import Redis
@@ -454,31 +456,57 @@ async def cmd_test(message: Message, base_url: str):
     await message.answer("Нажмите кнопку для теста:", reply_markup=keyboard)
 
 @user_router.message(Command(commands="oge"))
-async def process_oge(message: Message, i18n: dict[str, str]):
-    keyboard = oge_keyboard()
+async def process_oge(message: Message,  conn: AsyncConnection,i18n: dict[str, str]):
+    keyboard = oge_keyboard()    
+    user_oge_actions = await get_user_oge_actions(conn, user_id=message.from_user.id)    
+    rest = 10 - user_oge_actions
     await message.answer(
-        text=i18n.get("/oge"),
+        text=i18n.get("/oge").format(rest),
         reply_markup=keyboard,
     )
     
     
 @user_router.callback_query(F.data == "oge_btn")
-async def process_oge_press(callback: CallbackQuery, conn: AsyncConnection, texlive, i18n: dict[str, str]):
+async def process_oge_press(callback: CallbackQuery,  conn: AsyncConnection, texlive, i18n: dict[str, str]):
     await callback.answer()
     
-    await callback.message.edit_text(
-        text=i18n.get("compiling"), reply_markup=oge_keyboard()
-    )
+    user_id=callback.from_user.id
+    user_oge_actions = await get_user_oge_actions(conn, user_id=user_id)    
+    rest = 10 - user_oge_actions
+    print(rest)
+    if rest > 0:
+        msg = i18n.get("compiling").format(rest)
     
-    context, ctx_tasks, rest_tasks = await get_variant_oge(conn)
-    # print(context, ctx_tasks, rest_tasks)
-    pdf_doc = await make_variant_oge(context, ctx_tasks, rest_tasks, texlive)
+        await callback.message.edit_text(
+            text=msg, reply_markup=oge_keyboard()
+        )
+        
+        context, ctx_tasks, rest_tasks = await get_variant_oge(conn)
+        # print(context, ctx_tasks, rest_tasks)
+        pdf_doc = await make_variant_oge(context, ctx_tasks, rest_tasks, texlive)
+                
+        await callback.message.answer_document(
+            document=pdf_doc
+        )   
+        
+        msg = i18n.get("done")+'\n'+ i18n.get('/oge').format(rest-1)
+        
+        await callback.message.edit_text(
+            text=msg,
+            reply_markup=oge_keyboard(),
+            show_alert=False,
+        )   
+    else:
+        try:
+            await callback.message.edit_text(
+                text=i18n.get("oge_limit_violated"),
+                reply_markup=oge_keyboard()
+            )
+        except TelegramBadRequest:
+            pass 
+        
+        return
     
-    await callback.message.edit_text(
-        text=i18n.get("compilation_done"),
-        reply_markup=oge_keyboard(),
-        show_alert=False,
-    )
-    await callback.message.answer_document(
-        document=pdf_doc
-    )
+    
+    
+    await add_user_oge_activity(conn, user_id=user_id)

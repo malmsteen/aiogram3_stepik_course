@@ -487,3 +487,68 @@ async def get_variant_oge(conn: AsyncConnection) -> tuple:
                        for row in await cursor.fetchall()]
 
     return ctx, ctx_tasks, rest_tasks
+
+
+async def get_oge_limit(
+    conn: AsyncConnection,
+    *,
+    user_id: int,
+) -> int:
+    async with conn.cursor() as cursor:
+        data = await cursor.execute(
+            query="""
+                SELECT oge_limit FROM users WHERE user_id = %s;
+            """,
+            params=(user_id,),
+        )
+        row = await data.fetchone()
+    if row:
+        logger.info(
+            "The user with `user_id`=%s has the banned status is %s", user_id, row[0]
+        )
+    else:
+        logger.warning("No user with `user_id`=%s found in the database", user_id)
+    return row[0] if row else None
+
+async def add_user_oge_activity(
+    conn: AsyncConnection,
+    *,
+    user_id: int,
+) -> None:
+    async with conn.cursor() as cursor:
+        await cursor.execute(
+            query="""
+                INSERT INTO activity (user_id)
+                VALUES (%s)
+                ON CONFLICT (user_id, activity_date)
+                DO UPDATE
+                SET oge_generated = activity.oge_generated + 1;
+            """,
+            params=(user_id,),
+        )
+    logger.info("User activity updated. table=`activity`, user_id=%d", user_id)
+    
+    
+async def get_user_oge_actions(
+    conn: AsyncConnection,
+    *,
+    user_id: int,
+) -> int:
+    async with conn.cursor() as cursor:
+        data = await cursor.execute(
+            query="""
+                SELECT oge_generated 
+                FROM activity 
+                WHERE user_id = %s
+                AND activity_date = CURRENT_DATE;
+            """,
+            params=(user_id,),
+        )
+        row = await data.fetchone()
+    if row:
+        logger.info(
+            "The user with `user_id`=%s has the banned status is %s", user_id, row[0]
+        )
+    else:
+        logger.warning("No user with `user_id`=%s found in the database", user_id)
+    return row[0] if row else None

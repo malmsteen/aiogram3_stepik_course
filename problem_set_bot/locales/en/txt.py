@@ -50,4 +50,23 @@ EN: dict[str, str] = {
     "not_banned": "❗ The user was not banned anyway!",
     "successfully_unbanned": "⚠️ The user has been successfully unbanned!",
     "statistics": "📊 <b>Statistics on user actions:</b>\n\n{}",
+    "compiling": "⚙️✨ Compiling...",
+    "compilation_done": "✅ Done! You can try another one",
+    "/addanswer": "Enter <b>problem id</b> (3 or more symbols <b>0-9, a-f</b>, in any case)"
+    "and after space it's answer (<b>decimal number, </b>).\n"
+    "For example:"
+    "``` 4cb -10.5```"
+    "Or send <b>photo </b> of your written answer, with <b>problem id</b> in caption",
+    "cancel_ans": "Cancel",
+    "send_ans": "Send answer",
+    "ans_been_sent": "Thank you, your answer has been sent",
+    "small_id": "Problem id has to begin with 3 hexadecimal symbols at least",
+    "cancel_broadcast": "❌ Broadcast state canceled.",
+    "broadcast_active": "📢 Broadcast state activated.\nYou can send me content (any media - text, photo, image, video, document\nTo cancel press /cancel",
+    "broadcasting": "⏳ Broadcasting...",
+    "no_alive": "❌ No alive users for broadcasting.",
+    "broadcast_completed": "✅ Broadcasting done.\nBroadcasted to: {} from {} users.",
+    "/oge": "You can generate random variant of OGE.\n Attempts rest: {}",
+    "oge_limit_violated": "You've reached your limit of 10 OGE variants for today. Reset is tomorrow.",
+    "done": "✅ Done!"
 }
